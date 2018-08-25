@@ -32,6 +32,10 @@ func TestScanNumber(t *testing.T) {
 		t.Error(fmt.Sprintf("expect len(tokens) to be 1, but got: %v.", len(tokens)))
 	}
 
+	if tokens[0].Type != TokenNumber {
+		t.Error(errmsg(TokenNumber, tokens[0]))
+	}
+
 	if tokens[0].Literal != float64(62) {
 		t.Error(fmt.Sprintf("expect number 62, but got: %v", tokens[0].Literal))
 	}

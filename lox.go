@@ -57,7 +57,7 @@ func RunPrompt() {
 }
 
 // ParsingError reports a parsing error.
-func ParsingError(token Token, message string) {
+func ParsingError(token *Token, message string) {
 	if token.Type == TokenEOF {
 		report(token.Line, " at end", message)
 	} else {
@@ -71,6 +71,6 @@ func LexingError(line int, message string) {
 }
 
 func report(line int, where, message string) {
-	fmt.Errorf("[line %v] Error %v: %v", line, where, message)
+	fmt.Printf("[line %v] Error %v: %v\n", line, where, message)
 	hadError = true
 }

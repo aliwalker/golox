@@ -11,15 +11,17 @@ func NewParser(tokens []*Token) *Parser {
 	return &Parser{tokens, 0}
 }
 
-func (p *Parser) match(types ...TokenType) bool {
-	for _, t := range types {
-		if p.check(t) {
-			p.advance()
-			return true
-		}
-	}
+// when there's parsing error that cannot be continue, parser should panic.
+func parserPanic(token *Token, message string) error {
+	ParsingError(token, message)
+	panic(message)
+}
 
-	return false
+func (p *Parser) advance() *Token {
+	if !p.isAtEnd() {
+		p.current++
+	}
+	return p.previous()
 }
 
 func (p *Parser) check(t TokenType) bool {
@@ -34,14 +36,12 @@ func (p *Parser) check(t TokenType) bool {
 	return false
 }
 
-func (p *Parser) advance() *Token {
-	if p.isAtEnd() {
-		return nil
+func (p *Parser) consume(t TokenType, message string) *Token {
+	if p.check(t) {
+		return p.advance()
 	}
-
-	token := p.tokens[p.current]
-	p.current++
-	return token
+	parserPanic(p.peek(), message)
+	return nil
 }
 
 func (p *Parser) isAtEnd() bool {
@@ -49,6 +49,21 @@ func (p *Parser) isAtEnd() bool {
 		return true
 	}
 	return false
+}
+
+func (p *Parser) match(types ...TokenType) bool {
+	for _, t := range types {
+		if p.check(t) {
+			p.advance()
+			return true
+		}
+	}
+
+	return false
+}
+
+func (p *Parser) peek() *Token {
+	return p.tokens[p.current]
 }
 
 func (p *Parser) previous() *Token {
@@ -63,7 +78,7 @@ func (p *Parser) previous() *Token {
 // comparison		-> addition ( ( "<" | "<=" | ">" | ">=" ) addition )* ;
 // addition			-> multiplication ( ( "+" | "-" ) multiplication )* ;
 // multiplication 	-> unary ( ( "*" | "/" ) unary )* ;
-// unary			-> ( "!" | "-" ) primary ;
+// unary			-> ( "!" | "-" )? primary ;
 // primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | "true" | "false" | "nil" ;
 
 // Parse parses tokens returned from scanner.
@@ -160,10 +175,9 @@ func (p *Parser) unary() Expr {
 		operator := p.previous()
 		value := p.unary()
 		return NewUnary(operator, value)
-	} else {
-		// TODO: Fix this.
-		panic("expect unary.")
 	}
+	// TODO: call p.call() when function call is implemented.
+	return p.primary()
 }
 
 func (p *Parser) primary() Expr {
@@ -181,12 +195,13 @@ func (p *Parser) primary() Expr {
 		return NewLiteral(p.previous().Literal)
 	}
 
+	// grouping.
 	if p.match(TokenLeftParen) {
 		expr := p.expression()
-		//p.consume(TokenRightParen, "expect ')' after expression.")
+		p.consume(TokenRightParen, "expect ')' after expression.")
 		return NewGrouping(expr)
 	}
 
-	// TODO: Fix this.
-	panic("expect expression")
+	parserPanic(p.peek(), "expect expression.")
+	return nil
 }
