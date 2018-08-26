@@ -21,12 +21,17 @@ func main() {
 	}
 
 	defineAst(out, "Expr", []string{
-		"Assign		: Name *Token, value Expr",
+		"Assign		: Name *Token, Value Expr",
 		"Binary		: Left Expr, Operator *Token, Right Expr",
 		"Grouping	: Expression Expr",
 		"Literal	: Value interface{}",
 		"Logical	: Left Expr, Operator *Token, Right Expr",
 		"Unary		: Operator *Token, Right Expr",
+	})
+
+	defineAst(out, "Stmt", []string{
+		"Expression	: Expression Expr",
+		"Print	: Expression Expr",
 	})
 }
 
@@ -55,7 +60,7 @@ func defineVisitor(base string, fields []string) string {
 	var src string
 
 	src += fmt.Sprintln("")
-	src += fmt.Sprintln("type Visitor interface {")
+	src += fmt.Sprintf("type %sVisitor interface {\n", base)
 	for _, field := range fields {
 		klass := strings.TrimRight(strings.Split(field, ":")[0], "\t")
 		src += fmt.Sprintf("Visit%s%s(expr *%s) interface{}", klass, base, klass)
@@ -64,9 +69,9 @@ func defineVisitor(base string, fields []string) string {
 	src += fmt.Sprintln("}")
 
 	src += fmt.Sprintln("")
-	src += fmt.Sprintf("type %v interface {", base)
+	src += fmt.Sprintf("type %s interface {", base)
 	src += fmt.Sprintln("")
-	src += fmt.Sprintln("Accept(v Visitor) interface{}")
+	src += fmt.Sprintf("Accept(v %sVisitor) interface{}\n", base)
 	src += fmt.Sprintln("}")
 
 	return src
@@ -108,7 +113,7 @@ func defineType(base, klass, fields string) string {
 	src += fmt.Sprintln("}")
 	src += fmt.Sprintln("}")
 
-	src += fmt.Sprintf("func (expr *%s) Accept(v Visitor) interface{} {", klass)
+	src += fmt.Sprintf("func (expr *%s) Accept(v %sVisitor) interface{} {", klass, base)
 	src += fmt.Sprintln("")
 	src += fmt.Sprintf("return v.Visit%s%s(expr)", klass, base)
 	src += fmt.Sprintln("}")

@@ -1,6 +1,6 @@
 package golox
 
-type Visitor interface {
+type ExprVisitor interface {
 	VisitAssignExpr(expr *Assign) interface{}
 	VisitBinaryExpr(expr *Binary) interface{}
 	VisitGroupingExpr(expr *Grouping) interface{}
@@ -10,18 +10,18 @@ type Visitor interface {
 }
 
 type Expr interface {
-	Accept(v Visitor) interface{}
+	Accept(v ExprVisitor) interface{}
 }
 
 type Assign struct {
 	Name  *Token
-	value Expr
+	Value Expr
 }
 
 func NewAssign(name *Token, value Expr) Expr {
-	return &Assign{Name: name, value: value}
+	return &Assign{Name: name, Value: value}
 }
-func (expr *Assign) Accept(v Visitor) interface{} {
+func (expr *Assign) Accept(v ExprVisitor) interface{} {
 	return v.VisitAssignExpr(expr)
 }
 
@@ -34,7 +34,7 @@ type Binary struct {
 func NewBinary(left Expr, operator *Token, right Expr) Expr {
 	return &Binary{Left: left, Operator: operator, Right: right}
 }
-func (expr *Binary) Accept(v Visitor) interface{} {
+func (expr *Binary) Accept(v ExprVisitor) interface{} {
 	return v.VisitBinaryExpr(expr)
 }
 
@@ -45,7 +45,7 @@ type Grouping struct {
 func NewGrouping(expression Expr) Expr {
 	return &Grouping{Expression: expression}
 }
-func (expr *Grouping) Accept(v Visitor) interface{} {
+func (expr *Grouping) Accept(v ExprVisitor) interface{} {
 	return v.VisitGroupingExpr(expr)
 }
 
@@ -56,7 +56,7 @@ type Literal struct {
 func NewLiteral(value interface{}) Expr {
 	return &Literal{Value: value}
 }
-func (expr *Literal) Accept(v Visitor) interface{} {
+func (expr *Literal) Accept(v ExprVisitor) interface{} {
 	return v.VisitLiteralExpr(expr)
 }
 
@@ -69,7 +69,7 @@ type Logical struct {
 func NewLogical(left Expr, operator *Token, right Expr) Expr {
 	return &Logical{Left: left, Operator: operator, Right: right}
 }
-func (expr *Logical) Accept(v Visitor) interface{} {
+func (expr *Logical) Accept(v ExprVisitor) interface{} {
 	return v.VisitLogicalExpr(expr)
 }
 
@@ -81,6 +81,6 @@ type Unary struct {
 func NewUnary(operator *Token, right Expr) Expr {
 	return &Unary{Operator: operator, Right: right}
 }
-func (expr *Unary) Accept(v Visitor) interface{} {
+func (expr *Unary) Accept(v ExprVisitor) interface{} {
 	return v.VisitUnaryExpr(expr)
 }

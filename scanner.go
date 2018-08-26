@@ -28,6 +28,7 @@ var keywords = map[string]TokenType{
 	"if":     TokenIf,
 	"nil":    TokenNil,
 	"or":     TokenOr,
+	"print":  TokenPrint,
 	"return": TokenReturn,
 	"super":  TokenSuper,
 	"this":   TokenThis,

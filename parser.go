@@ -70,6 +70,10 @@ func (p *Parser) previous() *Token {
 	return p.tokens[p.current-1]
 }
 
+// program			-> statement* EOF ;
+// statement		-> expreStmt | printStmt ;
+// printStmt		-> "print" expression ;
+// expreStmt		-> expression ;
 // expression		-> assignment ;
 // asignment		-> identifier "=" expression | logical_or ;
 // logical_or		-> logical_and ( "or" logical_and )* ;
@@ -81,14 +85,36 @@ func (p *Parser) previous() *Token {
 // unary			-> ( "!" | "-" )? primary ;
 // primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | "true" | "false" | "nil" ;
 
-// Parse parses tokens returned from scanner.
-func (p *Parser) Parse() []Expr {
-	var exprs []Expr
+// Parse is the entry point of Parser.
+func (p *Parser) Parse() []Stmt {
+	var stmts []Stmt
 	for !p.isAtEnd() {
-		exprs = append(exprs, p.expression())
+		stmts = append(stmts, p.statement())
 	}
 
-	return exprs
+	return stmts
+}
+
+func (p *Parser) statement() Stmt {
+	switch {
+	case p.match(TokenPrint):
+		return p.printStmt()
+	default:
+		return p.expressionStmt()
+	}
+}
+
+func (p *Parser) printStmt() Stmt {
+	expr := p.expression()
+	p.consume(TokenSemi, "expect ';' after print expression.")
+	return NewPrint(expr)
+}
+
+func (p *Parser) expressionStmt() Stmt {
+	expr := p.expression()
+
+	p.consume(TokenSemi, "expect ';' after expression.")
+	return NewExpression(expr)
 }
 
 func (p *Parser) expression() Expr {
@@ -181,27 +207,21 @@ func (p *Parser) unary() Expr {
 }
 
 func (p *Parser) primary() Expr {
-	if p.match(TokenFalse) {
+	switch {
+	case p.match(TokenFalse):
 		return NewLiteral(false)
-	}
-	if p.match(TokenTrue) {
+	case p.match(TokenTrue):
 		return NewLiteral(true)
-	}
-	if p.match(TokenNil) {
+	case p.match(TokenNil):
 		return NewLiteral(nil)
-	}
-
-	if p.match(TokenNumber, TokenString) {
+	case p.match(TokenNumber, TokenString):
 		return NewLiteral(p.previous().Literal)
-	}
-
-	// grouping.
-	if p.match(TokenLeftParen) {
+	case p.match(TokenLeftParen): // grouping.
 		expr := p.expression()
 		p.consume(TokenRightParen, "expect ')' after expression.")
 		return NewGrouping(expr)
+	default:
+		parserPanic(p.peek(), "expect expression.")
+		return nil
 	}
-
-	parserPanic(p.peek(), "expect expression.")
-	return nil
 }

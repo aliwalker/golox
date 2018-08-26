@@ -20,6 +20,7 @@ const (
 	TokenMinus
 	TokenPlus
 	TokenPercent
+	TokenPrint
 	TokenSemi
 	TokenSlash
 	TokenStar

@@ -5,191 +5,253 @@ import (
 	"testing"
 )
 
-func runParser(t *testing.T, source string) []Expr {
+func convertBinary(expr Expr) (*Binary, bool) {
+	binary, ok := expr.(*Binary)
+	if ok == true {
+		return binary, ok
+	}
+	return nil, false
+}
+
+func convertLogical(expr Expr) (*Logical, bool) {
+	logical, ok := expr.(*Logical)
+	if ok == true {
+		return logical, ok
+	}
+	return nil, false
+}
+
+func runParser(t *testing.T, source string) []Stmt {
 	scanner := NewScanner(source)
 	tokens := scanner.ScanTokens()
 	parser := NewParser(tokens)
-	exprs := parser.Parse()
+	stmts := parser.Parse()
 
-	if len(exprs) != 1 {
+	if len(stmts) != 1 {
 		t.Error("expect len(exprs) to be 1")
 	}
-	return exprs
+	return stmts
+}
+
+// ===================================== check helpers. =========================================
+
+func checkExprAndPrintStmt(t *testing.T, stmts []Stmt, operator TokenType, values ...interface{}) {
+	var expr Expr
+
+	// convert it to either an Expression Stmt or Print Stmt.
+	switch stmt := stmts[0].(type) {
+	case *Expression:
+	case *Print:
+		expr = stmt.Expression
+		checkLogical(t, expr, operator, values)
+	default:
+		t.Error("expect Print or Expression stmt.")
+	}
+}
+
+func checkLogical(t *testing.T, expr Expr, operator TokenType, values ...interface{}) {
+	var checkOperand = func(child *Logical, isLogical bool) {
+		var ok bool
+		if isLogical == true && child != nil {
+			if operator, ok = values[0].(TokenType); ok != true {
+				t.Error("expect an operator's TokenType for Logical checking.")
+			}
+
+			values = values[1:]
+			checkLogical(t, child, operator, values)
+			return
+		} else {
+			checkBinary(t, expr, operator, values)
+			return
+		}
+
+		t.Error("checkLogical error. ")
+	}
+
+	switch operator {
+	case 0:
+	case TokenSlash:
+	case TokenStar:
+	case TokenPercent:
+	case TokenPlus:
+	case TokenMinus:
+	case TokenBang:
+	case TokenEqualEqual:
+	case TokenBangEqual:
+	case TokenGreater:
+	case TokenGreaterEqual:
+	case TokenLess:
+	case TokenLessEqual:
+		checkBinary(t, expr, operator, values)
+	default:
+		logical, ok := expr.(*Logical)
+		if ok != true {
+			t.Error("expect Logical expression.")
+		}
+
+		// check operator type.
+		if logical.Operator.Type != operator {
+			t.Error(fmt.Sprintf("checkLogical error: expect operator type %v, but got %v", operator, logical.Operator.Type))
+		}
+		checkOperand(convertLogical(logical.Left))
+		checkOperand(convertLogical(logical.Right))
+	}
+}
+
+func checkBinary(t *testing.T, expr Expr, operator TokenType, values ...interface{}) {
+	var checkOperand = func(child *Binary, isLogical bool) {
+		var ok bool
+		if isLogical == true && child != nil {
+			if operator, ok = values[0].(TokenType); ok != true {
+				t.Error("expect an operator's TokenType for Binary checking.")
+			}
+
+			values = values[1:]
+			checkBinary(t, child, operator, values)
+			return
+		} else {
+			// only gonna have one expected value, ignore the rest if any.
+			checkUnary(t, expr, operator, values[0])
+			return
+		}
+
+		t.Error("checkBinary error. ")
+	}
+
+	switch operator {
+	case 0:
+	case TokenBang:
+	case TokenMinus:
+		checkUnary(t, expr, operator, values[0])
+	default:
+		binary, ok := expr.(*Binary)
+		if ok != true {
+			t.Error("expect Binary expression.")
+		}
+
+		if binary.Operator.Type != operator {
+			t.Error(fmt.Sprintf("checkBinary error: expect operator type %v, but got %v", operator, binary.Operator.Type))
+		}
+		checkOperand(convertBinary(binary.Left))
+		checkOperand(convertBinary(binary.Right))
+	}
+}
+
+func checkUnary(t *testing.T, expr Expr, operator TokenType, value interface{}) {
+	switch operator {
+	case 0:
+		checkGroupingAndLiteral(t, expr, value)
+	default:
+		unary, ok := expr.(*Unary)
+		if ok != true {
+			t.Error("expect Unary expression.")
+		}
+
+		if unary.Operator.Type != operator {
+			t.Error(fmt.Sprintf("checkUnary error: expect operator type %v, but got %v", operator, unary.Operator.Type))
+		}
+		checkGroupingAndLiteral(t, unary.Right, value)
+	}
+}
+
+// p.primary only returns Grouping & Literal.
+func checkGroupingAndLiteral(t *testing.T, expr Expr, value interface{}) {
+	var literal *Literal
+	var ok bool
+
+	// convert it to either a Literal or Grouping Expr.
+	switch v := expr.(type) {
+	case *Literal:
+		literal = v
+	case *Grouping:
+		innerExpr := v.Expression
+		if literal, ok = innerExpr.(*Literal); ok != true {
+			t.Error("expect Expression in Grouping.")
+		}
+	default:
+		t.Error("expect Grouping or Literal expr.")
+	}
+
+	if literal.Value != value {
+		t.Error(fmt.Sprintf("expect value to be %q", value))
+	}
 }
 
 func TestPrimary(t *testing.T) {
-	var checkLiteral = func(exprs []Expr, value interface{}) {
-		literal, ok := exprs[0].(*Literal)
+	stmts := runParser(t, "\"This is a string\";")
+	checkExprAndPrintStmt(t, stmts, 0, "This is a string;")
 
-		if ok != true {
-			t.Error("expect type 'Literal'")
-		}
+	stmts = runParser(t, "60;")
+	checkExprAndPrintStmt(t, stmts, 0, float64(60))
 
-		if literal.Value != value {
-			t.Error(fmt.Sprintf("expect value to be %q", value))
-		}
-	}
+	stmts = runParser(t, "nil;")
+	checkExprAndPrintStmt(t, stmts, 0, nil)
 
-	exprs := runParser(t, "\"This is a string\"")
-	checkLiteral(exprs, "This is a string")
+	stmts = runParser(t, "true;")
+	checkExprAndPrintStmt(t, stmts, 0, true)
 
-	exprs = runParser(t, "60")
-	checkLiteral(exprs, float64(60))
-
-	exprs = runParser(t, "nil")
-	checkLiteral(exprs, nil)
-
-	exprs = runParser(t, "true")
-	checkLiteral(exprs, true)
-
-	exprs = runParser(t, "false")
-	checkLiteral(exprs, false)
+	stmts = runParser(t, "false;")
+	checkExprAndPrintStmt(t, stmts, 0, false)
 
 	// Grouping.
-	exprs = runParser(t, "(60)")
-	expr, ok := exprs[0].(*Grouping)
-	if ok != true {
-		t.Error("expect type 'Grouping'")
-	}
-
-	literal, ok := expr.Expression.(*Literal)
-	if ok != true {
-		t.Error("expect a Literal")
-	}
-
-	if literal.Value != float64(60) {
-		t.Error("expect value to be 60")
-	}
+	stmts = runParser(t, "(60);")
+	checkExprAndPrintStmt(t, stmts, 0, float64(60))
 }
 
 func TestUnary(t *testing.T) {
-	var checkUnary = func(exprs []Expr, value interface{}) {
-		expr, ok := exprs[0].(*Unary)
-		if ok != true {
-			t.Error("expect Unary.")
-		}
+	var stmts = runParser(t, "!true;")
+	checkExprAndPrintStmt(t, stmts, TokenBang, true)
 
-		literal, ok := expr.Right.(*Literal)
-		if ok != true {
-			t.Error("expect Literal.")
-		}
-
-		if literal.Value != value {
-			t.Error(fmt.Sprintf("expect value to be %q, but got: %q", value, literal.Value))
-		}
-	}
-
-	var exprs = runParser(t, "!true")
-	checkUnary(exprs, true)
-
-	exprs = runParser(t, "-1")
-	checkUnary(exprs, float64(1))
-}
-
-func checkArithmetics(t *testing.T, exprs []Expr, op TokenType, lVal, rVal interface{}) {
-	expr, ok := exprs[0].(*Binary)
-
-	if ok != true {
-		t.Error("expect Binary")
-	}
-
-	var checkOperand = func(operand Expr, val interface{}) {
-		value, ok := operand.(*Literal)
-		if ok != true {
-			t.Error("expect left operand to be Literal")
-		}
-		if value.Value != val {
-			t.Error(fmt.Sprintf("expect left operand value to be %q", val))
-		}
-	}
-
-	// check operator.
-	if expr.Operator.Type != op {
-		t.Error(fmt.Sprintf("expect operator to be of type %v, but got %v", op, expr.Operator.Type))
-	}
-
-	// check left operand.
-	checkOperand(expr.Left, lVal)
-
-	// check right operand.
-	checkOperand(expr.Right, rVal)
+	stmts = runParser(t, "-1;")
+	checkExprAndPrintStmt(t, stmts, TokenMinus, float64(1))
 }
 
 func TestMultiplication(t *testing.T) {
-	var exprs = runParser(t, "2 * 2")
-	checkArithmetics(t, exprs, TokenStar, float64(2), float64(2))
+	var stmts = runParser(t, "2 * 2;")
+	checkExprAndPrintStmt(t, stmts, TokenStar, float64(2), float64(2))
 
-	exprs = runParser(t, "10 / 2")
-	checkArithmetics(t, exprs, TokenSlash, float64(10), float64(2))
+	stmts = runParser(t, "10 / 2;")
+	checkExprAndPrintStmt(t, stmts, TokenSlash, float64(10), float64(2))
 
-	exprs = runParser(t, "9 % 2")
-	checkArithmetics(t, exprs, TokenPercent, float64(9), float64(2))
+	stmts = runParser(t, "9 % 2;")
+	checkExprAndPrintStmt(t, stmts, TokenPercent, float64(9), float64(2))
 }
 
 func TestAddition(t *testing.T) {
-	var exprs = runParser(t, "2 + 2")
-	checkArithmetics(t, exprs, TokenPlus, float64(2), float64(2))
+	var stmts = runParser(t, "2 + 2;")
+	checkExprAndPrintStmt(t, stmts, TokenPlus, float64(2), float64(2))
 
-	exprs = runParser(t, "5+6")
-	checkArithmetics(t, exprs, TokenPlus, float64(5), float64(6))
+	stmts = runParser(t, "5+6;")
+	checkExprAndPrintStmt(t, stmts, TokenPlus, float64(5), float64(6))
 }
 
 func TestComparison(t *testing.T) {
-	var exprs = runParser(t, "1 < 2")
-	checkArithmetics(t, exprs, TokenLess, float64(1), float64(2))
+	var stmts = runParser(t, "1 < 2;")
+	checkExprAndPrintStmt(t, stmts, TokenLess, float64(1), float64(2))
 
-	exprs = runParser(t, "2 <= 3")
-	checkArithmetics(t, exprs, TokenLessEqual, float64(2), float64(3))
+	stmts = runParser(t, "2 <= 3;")
+	checkExprAndPrintStmt(t, stmts, TokenLessEqual, float64(2), float64(3))
 
-	exprs = runParser(t, "9 > 5")
-	checkArithmetics(t, exprs, TokenGreater, float64(9), float64(5))
+	stmts = runParser(t, "9 > 5;")
+	checkExprAndPrintStmt(t, stmts, TokenGreater, float64(9), float64(5))
 
-	exprs = runParser(t, "9 >= 5")
-	checkArithmetics(t, exprs, TokenGreaterEqual, float64(9), float64(5))
+	stmts = runParser(t, "9 >= 5;")
+	checkExprAndPrintStmt(t, stmts, TokenGreaterEqual, float64(9), float64(5))
 }
 
 func TestEquality(t *testing.T) {
-	exprs := runParser(t, "1 == 2")
+	stmts := runParser(t, "1 == 2;")
 	// I know the func name is inappropriate.
-	checkArithmetics(t, exprs, TokenEqualEqual, float64(1), float64(2))
+	checkExprAndPrintStmt(t, stmts, TokenEqualEqual, float64(1), float64(2))
 
-	exprs = runParser(t, "1 != 2")
-	checkArithmetics(t, exprs, TokenBangEqual, float64(1), float64(2))
-}
-
-func checkLogical(t *testing.T, exprs []Expr, op TokenType, lVal, rVal interface{}) {
-	expr, ok := exprs[0].(*Logical)
-
-	if ok != true {
-		t.Error("expect Logical")
-	}
-
-	var checkOperand = func(operand Expr, val interface{}) {
-		value, ok := operand.(*Literal)
-		if ok != true {
-			t.Error("expect left operand to be Literal")
-		}
-		if value.Value != val {
-			t.Error(fmt.Sprintf("expect left operand value to be %q", val))
-		}
-	}
-
-	// check operator.
-	if expr.Operator.Type != op {
-		t.Error(fmt.Sprintf("expect operator to be of type %v, but got %v", op, expr.Operator.Type))
-	}
-
-	// check left operand.
-	checkOperand(expr.Left, lVal)
-
-	// check right operand.
-	checkOperand(expr.Right, rVal)
+	stmts = runParser(t, "1 != 2;")
+	checkExprAndPrintStmt(t, stmts, TokenBangEqual, float64(1), float64(2))
 }
 
 func TestLogical(t *testing.T) {
-	var exprs = runParser(t, "true and true")
-	checkLogical(t, exprs, TokenAnd, true, true)
+	var stmts = runParser(t, "true and true;")
+	checkExprAndPrintStmt(t, stmts, TokenAnd, true, true)
 
-	exprs = runParser(t, "false or true")
-	checkLogical(t, exprs, TokenOr, false, true)
+	stmts = runParser(t, "false or true;")
+	checkExprAndPrintStmt(t, stmts, TokenOr, false, true)
 }
