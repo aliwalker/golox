@@ -27,6 +27,7 @@ var keywords = map[string]TokenType{
 	"fun":    TokenFun,
 	"if":     TokenIf,
 	"nil":    TokenNil,
+	"or":     TokenOr,
 	"return": TokenReturn,
 	"super":  TokenSuper,
 	"this":   TokenThis,
@@ -78,7 +79,7 @@ func (s *Scanner) scanToken() {
 		s.addToken(TokenStar, nil)
 
 	case '!':
-		s.addIfMatch('=', TokenBangEqual, TokenEqual)
+		s.addIfMatch('=', TokenBangEqual, TokenBang)
 	case '=':
 		s.addIfMatch('=', TokenEqualEqual, TokenEqual)
 	case '<':

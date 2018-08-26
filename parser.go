@@ -128,7 +128,7 @@ func (p *Parser) and() Expr {
 func (p *Parser) equality() Expr {
 	expr := p.comparison()
 
-	for p.match(TokenEqual, TokenBangEqual) {
+	for p.match(TokenEqualEqual, TokenBangEqual) {
 		operator := p.previous()
 		right := p.comparison()
 		expr = NewBinary(expr, operator, right)
