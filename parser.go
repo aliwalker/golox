@@ -77,7 +77,7 @@ func (p *Parser) previous() *Token {
 // equality			-> comparison ( ( "==" | "!=" ) comparison )* ;
 // comparison		-> addition ( ( "<" | "<=" | ">" | ">=" ) addition )* ;
 // addition			-> multiplication ( ( "+" | "-" ) multiplication )* ;
-// multiplication 	-> unary ( ( "*" | "/" ) unary )* ;
+// multiplication 	-> unary ( ( "*" | "/" | "%" ) unary )* ;
 // unary			-> ( "!" | "-" )? primary ;
 // primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | "true" | "false" | "nil" ;
 
@@ -162,7 +162,7 @@ func (p *Parser) addition() Expr {
 func (p *Parser) multiplication() Expr {
 	expr := p.unary()
 
-	for p.match(TokenStar, TokenSlash) {
+	for p.match(TokenStar, TokenSlash, TokenPercent) {
 		operator := p.previous()
 		right := p.unary()
 		expr = NewBinary(expr, operator, right)

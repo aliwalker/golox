@@ -119,8 +119,11 @@ func TestMultiplication(t *testing.T) {
 	var exprs = runParser(t, "2 * 2")
 	checkArithmetics(t, exprs, TokenStar, float64(2), float64(2))
 
-	exprs = runParser(t, "10*2")
-	checkArithmetics(t, exprs, TokenStar, float64(10), float64(2))
+	exprs = runParser(t, "10 / 2")
+	checkArithmetics(t, exprs, TokenSlash, float64(10), float64(2))
+
+	exprs = runParser(t, "9 % 2")
+	checkArithmetics(t, exprs, TokenPercent, float64(9), float64(2))
 }
 
 func TestAddition(t *testing.T) {

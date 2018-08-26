@@ -4,59 +4,62 @@ import (
 	"fmt"
 )
 
+// TokenType represents the type of a token.
 type TokenType int
 
 // Token types.
 const (
 	NotAKeyword TokenType = iota
 	// single char
-	TokenLeftParen  //1
-	TokenRightParen //2
-	TokenLeftBrace  //3
-	TokenRightBrace //4
-	TokenComma      //5
-	TokenDot        //6
-	TokenMinus      //7
-	TokenPlus       //8
-	TokenSemi       //9
-	TokenSlash      //10
-	TokenStar       //11
+	TokenLeftParen
+	TokenRightParen
+	TokenLeftBrace
+	TokenRightBrace
+	TokenComma
+	TokenDot
+	TokenMinus
+	TokenPlus
+	TokenPercent
+	TokenSemi
+	TokenSlash
+	TokenStar
 
 	// one or two
-	TokenBang         //12
-	TokenBangEqual    //13
-	TokenEqual        //14
-	TokenEqualEqual   //15
-	TokenGreater      //16
-	TokenGreaterEqual //17
-	TokenLess         //18
-	TokenLessEqual    //19
+	TokenBang
+	TokenBangEqual
+	TokenEqual
+	TokenEqualEqual
+	TokenGreater
+	TokenGreaterEqual
+	TokenLess
+	TokenLessEqual
 
 	// literal
-	TokenString     //20
-	TokenIdentifier //21
-	TokenNumber     //22
+	TokenString
+	TokenIdentifier
+	TokenNumber
 
 	// keywords
-	TokenAnd    //23
-	TokenClass  //24
-	TokenFalse  //25
-	TokenElse   //26
-	TokenFor    //27
-	TokenFun    //28
-	TokenIf     //29
-	TokenNil    //30
-	TokenOr     //31
-	TokenReturn //32
-	TokenSuper  //33
-	TokenThis   //34
-	TokenTrue   //35
-	TokenVar    //36
-	TokenWhile  //37
+	TokenAnd
+	TokenClass
+	TokenFalse
+	TokenElse
+	TokenFor
+	TokenFun
+	TokenIf
+	TokenNil
+	TokenOr
+	TokenReturn
+	TokenSuper
+	TokenThis
+	TokenTrue
+	TokenVar
+	TokenWhile
 
-	TokenEOF //38
+	TokenEOF
 )
 
+// Token represents a single unit.
 type Token struct {
 	Type    TokenType
 	Lexeme  string

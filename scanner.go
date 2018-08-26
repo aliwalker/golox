@@ -77,6 +77,8 @@ func (s *Scanner) scanToken() {
 		s.addToken(TokenPlus, nil)
 	case '*':
 		s.addToken(TokenStar, nil)
+	case '%':
+		s.addToken(TokenPercent, nil)
 
 	case '!':
 		s.addIfMatch('=', TokenBangEqual, TokenBang)
