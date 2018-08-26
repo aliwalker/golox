@@ -21,7 +21,7 @@ func convertLogical(expr Expr) (*Logical, bool) {
 	return nil, false
 }
 
-func runParser(t *testing.T, source string) []Stmt {
+func parseSingleLine(t *testing.T, source string) []Stmt {
 	scanner := NewScanner(source)
 	tokens := scanner.ScanTokens()
 	parser := NewParser(tokens)
@@ -33,17 +33,33 @@ func runParser(t *testing.T, source string) []Stmt {
 	return stmts
 }
 
+type argsTocheck []interface{}
+
+func runChecks(t *testing.T, pairs map[string]argsTocheck) {
+	for source, args := range pairs {
+		stmts := parseSingleLine(t, source)
+		checkExprAndPrintStmt(t, stmts, args)
+	}
+}
+
 // ===================================== check helpers. =========================================
 
-func checkExprAndPrintStmt(t *testing.T, stmts []Stmt, operator TokenType, values ...interface{}) {
+func checkExprAndPrintStmt(t *testing.T, stmts []Stmt, values ...interface{}) {
 	var expr Expr
+	var ok bool
+	var operator TokenType
 
 	// convert it to either an Expression Stmt or Print Stmt.
 	switch stmt := stmts[0].(type) {
 	case *Expression:
 	case *Print:
 		expr = stmt.Expression
-		checkLogical(t, expr, operator, values)
+		operator, ok = values[0].(TokenType)
+		if ok != true {
+			t.Error("checkExprAndPrintStmt error: expect first arg to be TokenType of an operator.")
+		} else {
+			checkLogical(t, expr, operator, values)
+		}
 	default:
 		t.Error("expect Print or Expression stmt.")
 	}
@@ -54,9 +70,8 @@ func checkLogical(t *testing.T, expr Expr, operator TokenType, values ...interfa
 		var ok bool
 		if isLogical == true && child != nil {
 			if operator, ok = values[0].(TokenType); ok != true {
-				t.Error("expect an operator's TokenType for Logical checking.")
+				t.Error("expect TokenType of an operator for Logical checking.")
 			}
-
 			values = values[1:]
 			checkLogical(t, child, operator, values)
 			return
@@ -64,8 +79,6 @@ func checkLogical(t *testing.T, expr Expr, operator TokenType, values ...interfa
 			checkBinary(t, expr, operator, values)
 			return
 		}
-
-		t.Error("checkLogical error. ")
 	}
 
 	switch operator {
@@ -114,8 +127,6 @@ func checkBinary(t *testing.T, expr Expr, operator TokenType, values ...interfac
 			checkUnary(t, expr, operator, values[0])
 			return
 		}
-
-		t.Error("checkBinary error. ")
 	}
 
 	switch operator {
@@ -178,80 +189,68 @@ func checkGroupingAndLiteral(t *testing.T, expr Expr, value interface{}) {
 }
 
 func TestPrimary(t *testing.T) {
-	stmts := runParser(t, "\"This is a string\";")
-	checkExprAndPrintStmt(t, stmts, 0, "This is a string;")
+	var NoOperator = 0
+	var runs = map[string]argsTocheck{
+		"\"This is a string\";": {NoOperator, "This is a string"},
+		"60;":    {NoOperator, float64(60)},
+		"nil;":   {NoOperator, nil},
+		"true;":  {NoOperator, true},
+		"false;": {NoOperator, false},
+		"(60);":  {NoOperator, float64(60)},
+	}
 
-	stmts = runParser(t, "60;")
-	checkExprAndPrintStmt(t, stmts, 0, float64(60))
-
-	stmts = runParser(t, "nil;")
-	checkExprAndPrintStmt(t, stmts, 0, nil)
-
-	stmts = runParser(t, "true;")
-	checkExprAndPrintStmt(t, stmts, 0, true)
-
-	stmts = runParser(t, "false;")
-	checkExprAndPrintStmt(t, stmts, 0, false)
-
-	// Grouping.
-	stmts = runParser(t, "(60);")
-	checkExprAndPrintStmt(t, stmts, 0, float64(60))
+	runChecks(t, runs)
 }
 
 func TestUnary(t *testing.T) {
-	var stmts = runParser(t, "!true;")
-	checkExprAndPrintStmt(t, stmts, TokenBang, true)
+	var runs = map[string]argsTocheck{
+		"!true;": {TokenBang, true},
+		"-1;":    {TokenMinus, float64(1)},
+	}
 
-	stmts = runParser(t, "-1;")
-	checkExprAndPrintStmt(t, stmts, TokenMinus, float64(1))
+	runChecks(t, runs)
 }
 
 func TestMultiplication(t *testing.T) {
-	var stmts = runParser(t, "2 * 2;")
-	checkExprAndPrintStmt(t, stmts, TokenStar, float64(2), float64(2))
-
-	stmts = runParser(t, "10 / 2;")
-	checkExprAndPrintStmt(t, stmts, TokenSlash, float64(10), float64(2))
-
-	stmts = runParser(t, "9 % 2;")
-	checkExprAndPrintStmt(t, stmts, TokenPercent, float64(9), float64(2))
+	var runs = map[string]argsTocheck{
+		"2 * 2;":  {TokenStar, float64(2), float64(2)},
+		"10 / 2;": {TokenSlash, float64(10), float64(2)},
+		"9 % 2;":  {TokenPercent, float64(9), float64(2)},
+	}
+	runChecks(t, runs)
 }
 
 func TestAddition(t *testing.T) {
-	var stmts = runParser(t, "2 + 2;")
-	checkExprAndPrintStmt(t, stmts, TokenPlus, float64(2), float64(2))
-
-	stmts = runParser(t, "5+6;")
-	checkExprAndPrintStmt(t, stmts, TokenPlus, float64(5), float64(6))
+	var runs = map[string]argsTocheck{
+		"2 + 2;": {TokenPlus, float64(2), float64(2)},
+		"5+6;":   {TokenPlus, float64(5), float64(6)},
+	}
+	runChecks(t, runs)
 }
 
 func TestComparison(t *testing.T) {
-	var stmts = runParser(t, "1 < 2;")
-	checkExprAndPrintStmt(t, stmts, TokenLess, float64(1), float64(2))
-
-	stmts = runParser(t, "2 <= 3;")
-	checkExprAndPrintStmt(t, stmts, TokenLessEqual, float64(2), float64(3))
-
-	stmts = runParser(t, "9 > 5;")
-	checkExprAndPrintStmt(t, stmts, TokenGreater, float64(9), float64(5))
-
-	stmts = runParser(t, "9 >= 5;")
-	checkExprAndPrintStmt(t, stmts, TokenGreaterEqual, float64(9), float64(5))
+	var runs = map[string]argsTocheck{
+		"1 < 2;":  {TokenLess, float64(1), float64(2)},
+		"2 <= 3;": {TokenLessEqual, float64(2), float64(3)},
+		"9 > 5;":  {TokenGreater, float64(9), float64(5)},
+		"9 >= 5;": {TokenGreaterEqual, float64(9), float64(5)},
+	}
+	runChecks(t, runs)
 }
 
 func TestEquality(t *testing.T) {
-	stmts := runParser(t, "1 == 2;")
-	// I know the func name is inappropriate.
-	checkExprAndPrintStmt(t, stmts, TokenEqualEqual, float64(1), float64(2))
+	var runs = map[string]argsTocheck{
+		"1 == 2;": {TokenEqualEqual, float64(1), float64(2)},
+		"1 != 2;": {TokenBangEqual, float64(1), float64(2)},
+	}
 
-	stmts = runParser(t, "1 != 2;")
-	checkExprAndPrintStmt(t, stmts, TokenBangEqual, float64(1), float64(2))
+	runChecks(t, runs)
 }
 
 func TestLogical(t *testing.T) {
-	var stmts = runParser(t, "true and true;")
-	checkExprAndPrintStmt(t, stmts, TokenAnd, true, true)
-
-	stmts = runParser(t, "false or true;")
-	checkExprAndPrintStmt(t, stmts, TokenOr, false, true)
+	var runs = map[string]argsTocheck{
+		"true and true;": {TokenAnd, true, true},
+		"false or true;": {TokenOr, false, true},
+	}
+	runChecks(t, runs)
 }
