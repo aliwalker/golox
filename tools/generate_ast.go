@@ -39,7 +39,7 @@ func defineAst(out, base string, types []string) {
 	var src string
 
 	src += fmt.Sprintln("")
-	src += fmt.Sprintln("package golox")
+	src += fmt.Sprintln("package lox")
 	src += fmt.Sprintln("")
 
 	src += defineVisitor(base, types)

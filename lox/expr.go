@@ -1,4 +1,4 @@
-package golox
+package lox
 
 type ExprVisitor interface {
 	VisitAssignExpr(expr *Assign) interface{}

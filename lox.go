@@ -1,4 +1,4 @@
-package golox
+package lox
 
 import (
 	"bufio"
@@ -12,12 +12,18 @@ var (
 	hadRuntimeError = false // Runtime error.
 )
 
+var interpreter = NewInterpreter()
+
 func run(source string) {
 	scanner := NewScanner(source)
 	tokens := scanner.ScanTokens()
 	parser := NewParser(tokens)
+	stmts := parser.Parse()
 
-	parser.Parse()
+	if hadError {
+		return
+	}
+	interpreter.Interprete(stmts)
 }
 
 // RunFile runs a lox script file.

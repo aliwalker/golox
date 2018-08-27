@@ -1,4 +1,4 @@
-package golox
+package lox
 
 // Parser parses the tokens into an AST.
 type Parser struct {

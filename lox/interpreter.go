@@ -1,11 +1,20 @@
-package golox
+package lox
 
 import (
 	"fmt"
 )
 
 type Interpreter struct {
-	stmts []Stmt
+}
+
+func NewInterpreter() *Interpreter {
+	return &Interpreter{}
+}
+
+func (i *Interpreter) Interprete(stmts []Stmt) {
+	for _, stmt := range stmts {
+		i.execute(stmt)
+	}
 }
 
 func (i *Interpreter) evaluate(expr Expr) interface{} {

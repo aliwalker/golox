@@ -1,4 +1,4 @@
-package golox
+package lox
 
 import (
 	"fmt"

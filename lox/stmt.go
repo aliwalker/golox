@@ -1,4 +1,4 @@
-package golox
+package lox
 
 type StmtVisitor interface {
 	VisitExpressionStmt(stmt *Expression) interface{}
