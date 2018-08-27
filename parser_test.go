@@ -33,12 +33,15 @@ func parseSingleLine(t *testing.T, source string) []Stmt {
 	return stmts
 }
 
+// args passed to check helpers.
+// Operator's TokenType is always the first arg, if there is no operator(e.g, primary) pass 0.
+// args for each Expr or Stmt are grouped. From root of an AST down to each leaves.
 type argsTocheck []interface{}
 
 func runChecks(t *testing.T, pairs map[string]argsTocheck) {
 	for source, args := range pairs {
 		stmts := parseSingleLine(t, source)
-		checkExprAndPrintStmt(t, stmts, args)
+		checkExprAndPrintStmt(t, stmts, args...)
 	}
 }
 
@@ -52,50 +55,70 @@ func checkExprAndPrintStmt(t *testing.T, stmts []Stmt, values ...interface{}) {
 	// convert it to either an Expression Stmt or Print Stmt.
 	switch stmt := stmts[0].(type) {
 	case *Expression:
+		expr = stmt.Expression
 	case *Print:
 		expr = stmt.Expression
-		operator, ok = values[0].(TokenType)
-		if ok != true {
-			t.Error("checkExprAndPrintStmt error: expect first arg to be TokenType of an operator.")
-		} else {
-			checkLogical(t, expr, operator, values)
-		}
 	default:
 		t.Error("expect Print or Expression stmt.")
 	}
+
+	operator, ok = values[0].(TokenType)
+	if ok != true {
+		operator = 0
+	}
+	values = values[1:]
+	checkLogical(t, expr, operator, values...)
 }
 
-func checkLogical(t *testing.T, expr Expr, operator TokenType, values ...interface{}) {
-	var checkOperand = func(child *Logical, isLogical bool) {
+func checkLogical(t *testing.T, expr Expr, operator TokenType, values ...interface{}) []interface{} {
+	var checkOperand = func(child *Logical, isLogical, isLeft bool) {
 		var ok bool
 		if isLogical == true && child != nil {
 			if operator, ok = values[0].(TokenType); ok != true {
 				t.Error("expect TokenType of an operator for Logical checking.")
 			}
-			values = values[1:]
-			checkLogical(t, child, operator, values)
-			return
-		} else {
-			checkBinary(t, expr, operator, values)
+			values = values[1:] // consume 1 operator.
+
+			checkLogical(t, child, operator, values...)
+			values = values[2:] // consume 2 operands.
 			return
 		}
+
+		logical, _ := expr.(*Logical)
+		operator, ok = values[0].(TokenType)
+		if ok == true {
+			if isLeft == true {
+				values = checkBinary(t, logical.Left, operator, values...)
+			} else {
+				values = checkBinary(t, logical.Right, operator, values...)
+			}
+			return
+		}
+
+		if isLeft == true {
+			checkGroupingAndLiteral(t, logical.Left, values[0])
+		} else {
+			checkGroupingAndLiteral(t, logical.Right, values[0])
+		}
+		values = values[1:]
+		//return
 	}
 
 	switch operator {
-	case 0:
-	case TokenSlash:
-	case TokenStar:
-	case TokenPercent:
-	case TokenPlus:
-	case TokenMinus:
-	case TokenBang:
-	case TokenEqualEqual:
-	case TokenBangEqual:
-	case TokenGreater:
-	case TokenGreaterEqual:
-	case TokenLess:
-	case TokenLessEqual:
-		checkBinary(t, expr, operator, values)
+	case 0,
+		TokenSlash,
+		TokenStar,
+		TokenPercent,
+		TokenPlus,
+		TokenMinus,
+		TokenBang,
+		TokenEqualEqual,
+		TokenBangEqual,
+		TokenGreater,
+		TokenGreaterEqual,
+		TokenLess,
+		TokenLessEqual:
+		checkBinary(t, expr, operator, values...)
 	default:
 		logical, ok := expr.(*Logical)
 		if ok != true {
@@ -106,46 +129,70 @@ func checkLogical(t *testing.T, expr Expr, operator TokenType, values ...interfa
 		if logical.Operator.Type != operator {
 			t.Error(fmt.Sprintf("checkLogical error: expect operator type %v, but got %v", operator, logical.Operator.Type))
 		}
-		checkOperand(convertLogical(logical.Left))
-		checkOperand(convertLogical(logical.Right))
+		left, ok := convertLogical(logical.Left)
+		checkOperand(left, ok, true)
+
+		right, ok := convertLogical(logical.Right)
+		checkOperand(right, ok, false)
 	}
+	return values
 }
 
-func checkBinary(t *testing.T, expr Expr, operator TokenType, values ...interface{}) {
-	var checkOperand = func(child *Binary, isLogical bool) {
+func checkBinary(t *testing.T, expr Expr, operator TokenType, values ...interface{}) []interface{} {
+	var checkOperand = func(child *Binary, isBinary bool, left bool) {
 		var ok bool
-		if isLogical == true && child != nil {
+		if isBinary == true && child != nil {
 			if operator, ok = values[0].(TokenType); ok != true {
 				t.Error("expect an operator's TokenType for Binary checking.")
 			}
-
+			// consume operator.
 			values = values[1:]
-			checkBinary(t, child, operator, values)
-			return
-		} else {
-			// only gonna have one expected value, ignore the rest if any.
-			checkUnary(t, expr, operator, values[0])
+
+			checkBinary(t, child, operator, values...)
+			// consume 2 operands.
+			values = values[2:]
 			return
 		}
+		// only gonna have one expected value, ignore the rest if any.
+		binary, _ := expr.(*Binary)
+		if left == true {
+			checkUnary(t, binary.Left, 0, values[0])
+		} else {
+			checkUnary(t, binary.Right, 0, values[0])
+		}
+		// consume 1 operands.
+		values = values[1:]
+		return
 	}
 
 	switch operator {
 	case 0:
-	case TokenBang:
-	case TokenMinus:
+		//TokenBang,
+		//TokenMinus:
 		checkUnary(t, expr, operator, values[0])
 	default:
 		binary, ok := expr.(*Binary)
-		if ok != true {
-			t.Error("expect Binary expression.")
+		if ok == true {
+			if binary.Operator.Type != operator {
+				t.Error(fmt.Sprintf("checkBinary error: expect operator type %v, but got %v", operator, binary.Operator.Type))
+			}
+			left, ok := convertBinary(binary.Left)
+			checkOperand(left, ok, true)
+
+			right, ok := convertBinary(binary.Right)
+			checkOperand(right, ok, false)
+			return values
 		}
 
-		if binary.Operator.Type != operator {
-			t.Error(fmt.Sprintf("checkBinary error: expect operator type %v, but got %v", operator, binary.Operator.Type))
+		unary, ok := expr.(*Unary)
+		if ok == true {
+			checkUnary(t, unary, operator, values[0])
+			return values[1:]
 		}
-		checkOperand(convertBinary(binary.Left))
-		checkOperand(convertBinary(binary.Right))
+
+		t.Error("checkBinary error: expect Unary or Binary.")
 	}
+	return values
 }
 
 func checkUnary(t *testing.T, expr Expr, operator TokenType, value interface{}) {
@@ -184,7 +231,7 @@ func checkGroupingAndLiteral(t *testing.T, expr Expr, value interface{}) {
 	}
 
 	if literal.Value != value {
-		t.Error(fmt.Sprintf("expect value to be %q", value))
+		t.Error(fmt.Sprintf("expect value to be %v, but got %v", value, literal.Value))
 	}
 }
 
@@ -213,27 +260,31 @@ func TestUnary(t *testing.T) {
 
 func TestMultiplication(t *testing.T) {
 	var runs = map[string]argsTocheck{
-		"2 * 2;":  {TokenStar, float64(2), float64(2)},
-		"10 / 2;": {TokenSlash, float64(10), float64(2)},
-		"9 % 2;":  {TokenPercent, float64(9), float64(2)},
+		"2 * 2;":      {TokenStar, float64(2), float64(2)},
+		"2 * 3 * 4;":  {TokenStar, TokenStar, float64(2), float64(3), float64(4)},
+		"10 / 2;":     {TokenSlash, float64(10), float64(2)},
+		"10 / 2 / 5;": {TokenSlash, TokenSlash, float64(10), float64(2), float64(5)},
+		"9 % 2;":      {TokenPercent, float64(9), float64(2)},
 	}
 	runChecks(t, runs)
 }
 
 func TestAddition(t *testing.T) {
 	var runs = map[string]argsTocheck{
-		"2 + 2;": {TokenPlus, float64(2), float64(2)},
-		"5+6;":   {TokenPlus, float64(5), float64(6)},
+		"2 + 2;":     {TokenPlus, float64(2), float64(2)},
+		"5+6;":       {TokenPlus, float64(5), float64(6)},
+		"5 + 5 - 2;": {TokenMinus, TokenPlus, float64(5), float64(5), float64(2)},
 	}
 	runChecks(t, runs)
 }
 
 func TestComparison(t *testing.T) {
 	var runs = map[string]argsTocheck{
-		"1 < 2;":  {TokenLess, float64(1), float64(2)},
-		"2 <= 3;": {TokenLessEqual, float64(2), float64(3)},
-		"9 > 5;":  {TokenGreater, float64(9), float64(5)},
-		"9 >= 5;": {TokenGreaterEqual, float64(9), float64(5)},
+		"1 < 2;":      {TokenLess, float64(1), float64(2)},
+		"1 > 2 == 2;": {TokenEqualEqual, TokenGreater, float64(1), float64(2), float64(2)},
+		"2 <= 3;":     {TokenLessEqual, float64(2), float64(3)},
+		"9 > 5;":      {TokenGreater, float64(9), float64(5)},
+		"9 >= 5;":     {TokenGreaterEqual, float64(9), float64(5)},
 	}
 	runChecks(t, runs)
 }
@@ -249,8 +300,19 @@ func TestEquality(t *testing.T) {
 
 func TestLogical(t *testing.T) {
 	var runs = map[string]argsTocheck{
-		"true and true;": {TokenAnd, true, true},
-		"false or true;": {TokenOr, false, true},
+		"true and true;":          {TokenAnd, true, true},
+		"false or true;":          {TokenOr, false, true},
+		"true and true or false;": {TokenOr, TokenAnd, true, true, false},
+	}
+	runChecks(t, runs)
+}
+
+func TestPrecedence(t *testing.T) {
+	var runs = map[string]argsTocheck{
+		"1 + 2 * 3;":     {TokenPlus, float64(1), TokenStar, float64(2), float64(3)},
+		"1 * 2 / 2;":     {TokenSlash, TokenStar, float64(1), float64(2), float64(2)},
+		"1 + 2 < 2;":     {TokenLess, TokenPlus, float64(1), float64(2), float64(2)},
+		"1 < 2 == true;": {TokenEqualEqual, TokenLess, float64(1), float64(2), true},
 	}
 	runChecks(t, runs)
 }
