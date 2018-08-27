@@ -1,8 +1,8 @@
 package golox
 
 type StmtVisitor interface {
-	VisitExpressionStmt(expr *Expression) interface{}
-	VisitPrintStmt(expr *Print) interface{}
+	VisitExpressionStmt(stmt *Expression) interface{}
+	VisitPrintStmt(stmt *Print) interface{}
 }
 
 type Stmt interface {

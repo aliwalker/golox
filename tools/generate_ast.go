@@ -63,7 +63,7 @@ func defineVisitor(base string, fields []string) string {
 	src += fmt.Sprintf("type %sVisitor interface {\n", base)
 	for _, field := range fields {
 		klass := strings.TrimRight(strings.Split(field, ":")[0], "\t")
-		src += fmt.Sprintf("Visit%s%s(expr *%s) interface{}", klass, base, klass)
+		src += fmt.Sprintf("Visit%s%s(%s *%s) interface{}", klass, base, strings.ToLower(base), klass)
 		src += fmt.Sprintln("")
 	}
 	src += fmt.Sprintln("}")
