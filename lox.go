@@ -1,29 +1,30 @@
-package lox
+package main
 
 import (
 	"bufio"
 	"fmt"
+	"golox/lox"
 	"io/ioutil"
 	"os"
 )
 
-var (
-	hadError        = false // Lexing or parsing error.
-	hadRuntimeError = false // Runtime error.
-)
+var interpreter = lox.NewInterpreter()
 
-var interpreter = NewInterpreter()
+func main() {
 
-func run(source string) {
-	scanner := NewScanner(source)
+}
+
+func run(source string) (hadError, hadRuntimeError bool) {
+	scanner := lox.NewScanner(source)
 	tokens := scanner.ScanTokens()
-	parser := NewParser(tokens)
-	stmts := parser.Parse()
+	parser := lox.NewParser(tokens)
+	stmts, hadError := parser.Parse()
 
 	if hadError {
 		return
 	}
-	interpreter.Interprete(stmts)
+	hadRuntimeError = interpreter.Interprete(stmts)
+	return
 }
 
 // RunFile runs a lox script file.
@@ -33,11 +34,13 @@ func RunFile(path string) {
 		source string
 		err    error
 	)
+
 	if dat, err = ioutil.ReadFile(path); err != nil {
 		panic(fmt.Sprintf("Unable to read from file: %v.\n %v", path, err))
 	}
 	source = string(dat)
-	run(source)
+	hadError, hadRuntimeError := run(source)
+
 	if hadError {
 		os.Exit(65)
 	}
@@ -58,25 +61,5 @@ func RunPrompt() {
 			os.Exit(80)
 		}
 		run(string(line))
-		hadError = false
 	}
-}
-
-// ParsingError reports a parsing error.
-func ParsingError(token *Token, message string) {
-	if token.Type == TokenEOF {
-		report(token.Line, " at end", message)
-	} else {
-		report(token.Line, " at '"+token.Lexeme+"'", message)
-	}
-}
-
-// LexingError reports a lexing error.
-func LexingError(line int, message string) {
-	report(line, "", message)
-}
-
-func report(line int, where, message string) {
-	fmt.Printf("[line %v] Error %v: %v\n", line, where, message)
-	hadError = true
 }

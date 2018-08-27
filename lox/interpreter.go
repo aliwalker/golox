@@ -5,16 +5,25 @@ import (
 )
 
 type Interpreter struct {
+	hadRuntimeError bool
 }
 
 func NewInterpreter() *Interpreter {
-	return &Interpreter{}
+	return &Interpreter{false}
 }
 
-func (i *Interpreter) Interprete(stmts []Stmt) {
+func (i *Interpreter) Interprete(stmts []Stmt) (hadRuntimeError bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			i.hadRuntimeError = true
+		}
+		hadRuntimeError = i.hadRuntimeError
+	}()
+
 	for _, stmt := range stmts {
 		i.execute(stmt)
 	}
+	return
 }
 
 func (i *Interpreter) evaluate(expr Expr) interface{} {
@@ -135,7 +144,9 @@ func convertNumberOperand(operator *Token, operand interface{}) float64 {
 	if ok == true {
 		return val
 	}
-	panic(fmt.Sprintf("[line %v]RuntimePanic: %v", operator.Line, "Operand must be number."))
+	errmsg := "Operand must be number."
+	RuntimeError(operator, errmsg)
+	panic(errmsg)
 }
 
 func convertNumberOperands(operator *Token, left, right interface{}) (float64, float64) {
@@ -145,8 +156,9 @@ func convertNumberOperands(operator *Token, left, right interface{}) (float64, f
 	if ok1 == true && ok2 == true {
 		return lval, rval
 	}
-	//	RuntimePanic("Operands must be number.")
-	panic(fmt.Sprintf("[line %v]RuntimePanic: %v", operator.Line, "Operands must be number."))
+	errmsg := "Operands must be number."
+	RuntimeError(operator, errmsg)
+	panic(errmsg)
 }
 
 func isEqual(left, right interface{}) bool {

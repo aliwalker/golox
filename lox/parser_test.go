@@ -25,10 +25,14 @@ func parseSingleLine(t *testing.T, source string) []Stmt {
 	scanner := NewScanner(source)
 	tokens := scanner.ScanTokens()
 	parser := NewParser(tokens)
-	stmts := parser.Parse()
+	stmts, hadError := parser.Parse()
+
+	if hadError == true {
+		t.Error("syntax error.")
+	}
 
 	if len(stmts) != 1 {
-		t.Error("expect len(exprs) to be 1")
+		t.Error("expect len(stmts) to be 1.")
 	}
 	return stmts
 }

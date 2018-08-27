@@ -2,19 +2,14 @@ package lox
 
 // Parser parses the tokens into an AST.
 type Parser struct {
-	tokens  []*Token
-	current int
+	tokens   []*Token
+	current  int
+	hadError bool
 }
 
 // NewParser creates a parser.
 func NewParser(tokens []*Token) *Parser {
-	return &Parser{tokens, 0}
-}
-
-// when there's parsing error that cannot be continue, parser should panic.
-func parserPanic(token *Token, message string) error {
-	ParsingError(token, message)
-	panic(message)
+	return &Parser{tokens, 0, false}
 }
 
 func (p *Parser) advance() *Token {
@@ -40,8 +35,8 @@ func (p *Parser) consume(t TokenType, message string) *Token {
 	if p.check(t) {
 		return p.advance()
 	}
-	parserPanic(p.peek(), message)
-	return nil
+	ParsingError(p.peek(), message)
+	panic(message)
 }
 
 func (p *Parser) isAtEnd() bool {
@@ -86,13 +81,19 @@ func (p *Parser) previous() *Token {
 // primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | "true" | "false" | "nil" ;
 
 // Parse is the entry point of Parser.
-func (p *Parser) Parse() []Stmt {
+func (p *Parser) Parse() ([]Stmt, bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			p.hadError = true
+		}
+	}()
+
 	var stmts []Stmt
 	for !p.isAtEnd() {
 		stmts = append(stmts, p.statement())
 	}
 
-	return stmts
+	return stmts, p.hadError
 }
 
 func (p *Parser) statement() Stmt {
@@ -221,7 +222,7 @@ func (p *Parser) primary() Expr {
 		p.consume(TokenRightParen, "expect ')' after expression.")
 		return NewGrouping(expr)
 	default:
-		parserPanic(p.peek(), "expect expression.")
-		return nil
+		ParsingError(p.peek(), "expect expression.")
+		panic("expect expression.")
 	}
 }
