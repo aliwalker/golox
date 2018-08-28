@@ -243,11 +243,11 @@ func TestPrimary(t *testing.T) {
 	var NoOperator = 0
 	var runs = map[string]argsTocheck{
 		"\"This is a string\";": {NoOperator, "This is a string"},
-		"60;":    {NoOperator, float64(60)},
+		"60;":    {NoOperator, 60},
 		"nil;":   {NoOperator, nil},
 		"true;":  {NoOperator, true},
 		"false;": {NoOperator, false},
-		"(60);":  {NoOperator, float64(60)},
+		"(60);":  {NoOperator, 60},
 	}
 
 	runChecks(t, runs)
@@ -256,7 +256,7 @@ func TestPrimary(t *testing.T) {
 func TestUnary(t *testing.T) {
 	var runs = map[string]argsTocheck{
 		"!true;": {TokenBang, true},
-		"-1;":    {TokenMinus, float64(1)},
+		"-1;":    {TokenMinus, 1},
 	}
 
 	runChecks(t, runs)
@@ -264,39 +264,39 @@ func TestUnary(t *testing.T) {
 
 func TestMultiplication(t *testing.T) {
 	var runs = map[string]argsTocheck{
-		"2 * 2;":      {TokenStar, float64(2), float64(2)},
-		"2 * 3 * 4;":  {TokenStar, TokenStar, float64(2), float64(3), float64(4)},
-		"10 / 2;":     {TokenSlash, float64(10), float64(2)},
-		"10 / 2 / 5;": {TokenSlash, TokenSlash, float64(10), float64(2), float64(5)},
-		"9 % 2;":      {TokenPercent, float64(9), float64(2)},
+		"2 * 2;":      {TokenStar, 2, 2},
+		"2 * 3 * 4;":  {TokenStar, TokenStar, 2, 3, 4},
+		"10 / 2;":     {TokenSlash, 10, 2},
+		"10 / 2 / 5;": {TokenSlash, TokenSlash, 10, 2, 5},
+		"9 % 2;":      {TokenPercent, 9, 2},
 	}
 	runChecks(t, runs)
 }
 
 func TestAddition(t *testing.T) {
 	var runs = map[string]argsTocheck{
-		"2 + 2;":     {TokenPlus, float64(2), float64(2)},
-		"5+6;":       {TokenPlus, float64(5), float64(6)},
-		"5 + 5 - 2;": {TokenMinus, TokenPlus, float64(5), float64(5), float64(2)},
+		"2 + 2;":     {TokenPlus, 2, 2},
+		"5+6;":       {TokenPlus, 5, 6},
+		"5 + 5 - 2;": {TokenMinus, TokenPlus, 5, 5, 2},
 	}
 	runChecks(t, runs)
 }
 
 func TestComparison(t *testing.T) {
 	var runs = map[string]argsTocheck{
-		"1 < 2;":      {TokenLess, float64(1), float64(2)},
-		"1 > 2 == 2;": {TokenEqualEqual, TokenGreater, float64(1), float64(2), float64(2)},
-		"2 <= 3;":     {TokenLessEqual, float64(2), float64(3)},
-		"9 > 5;":      {TokenGreater, float64(9), float64(5)},
-		"9 >= 5;":     {TokenGreaterEqual, float64(9), float64(5)},
+		"1 < 2;":      {TokenLess, 1, 2},
+		"1 > 2 == 2;": {TokenEqualEqual, TokenGreater, 1, 2, 2},
+		"2 <= 3;":     {TokenLessEqual, 2, 3},
+		"9 > 5;":      {TokenGreater, 9, 5},
+		"9 >= 5;":     {TokenGreaterEqual, 9, 5},
 	}
 	runChecks(t, runs)
 }
 
 func TestEquality(t *testing.T) {
 	var runs = map[string]argsTocheck{
-		"1 == 2;": {TokenEqualEqual, float64(1), float64(2)},
-		"1 != 2;": {TokenBangEqual, float64(1), float64(2)},
+		"1 == 2;": {TokenEqualEqual, 1, 2},
+		"1 != 2;": {TokenBangEqual, 1, 2},
 	}
 
 	runChecks(t, runs)
@@ -313,10 +313,10 @@ func TestLogical(t *testing.T) {
 
 func TestPrecedence(t *testing.T) {
 	var runs = map[string]argsTocheck{
-		"1 + 2 * 3;":     {TokenPlus, float64(1), TokenStar, float64(2), float64(3)},
-		"1 * 2 / 2;":     {TokenSlash, TokenStar, float64(1), float64(2), float64(2)},
-		"1 + 2 < 2;":     {TokenLess, TokenPlus, float64(1), float64(2), float64(2)},
-		"1 < 2 == true;": {TokenEqualEqual, TokenLess, float64(1), float64(2), true},
+		"1 + 2 * 3;":     {TokenPlus, 1, TokenStar, 2, 3},
+		"1 * 2 / 2;":     {TokenSlash, TokenStar, 1, 2, 2},
+		"1 + 2 < 2;":     {TokenLess, TokenPlus, 1, 2, 2},
+		"1 < 2 == true;": {TokenEqualEqual, TokenLess, 1, 2, true},
 	}
 	runChecks(t, runs)
 }

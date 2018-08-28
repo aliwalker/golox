@@ -54,47 +54,62 @@ func (i *Interpreter) VisitBinaryExpr(expr *Binary) interface{} {
 	left := i.evaluate(expr.Left)
 	right := i.evaluate(expr.Right)
 
+	var lval, rval float64
+	var bothInt bool
+
 	switch expr.Operator.Type {
 	// comparison.
 	case TokenBangEqual:
-		return !isEqual(left, right)
+		return !equal(left, right)
 	case TokenEqualEqual:
-		return isEqual(left, right)
+		return equal(left, right)
 	case TokenGreater:
-		lval, rval := convertNumberOperands(expr.Operator, left, right)
+		lval, rval, _ = convertFloatOperands(expr.Operator, left, right)
 		return lval > rval
 	case TokenGreaterEqual:
-		lval, rval := convertNumberOperands(expr.Operator, left, right)
+		lval, rval, _ = convertFloatOperands(expr.Operator, left, right)
 		return lval >= rval
 	case TokenLess:
-		lval, rval := convertNumberOperands(expr.Operator, left, right)
+		lval, rval, _ = convertFloatOperands(expr.Operator, left, right)
 		return lval < rval
 	case TokenLessEqual:
-		lval, rval := convertNumberOperands(expr.Operator, left, right)
+		lval, rval, _ = convertFloatOperands(expr.Operator, left, right)
 		return lval <= rval
 
 	// arithmetics
 	case TokenMinus:
-		lval, rval := convertNumberOperands(expr.Operator, left, right)
+		if lval, rval, bothInt = convertFloatOperands(expr.Operator, left, right); bothInt == true {
+			return int(lval) - int(rval)
+		}
 		return lval - rval
 	case TokenPlus:
 		// string concat is supported.
-		lval, ok1 := left.(string)
-		rval, ok2 := right.(string)
+		lvalString, ok1 := left.(string)
+		rvalString, ok2 := right.(string)
 		if ok1 == true && ok2 == true {
-			return lval + rval
+			return lvalString + rvalString
 		}
 
-		lval2, rval2 := convertNumberOperands(expr.Operator, left, right)
-		return lval2 + rval2
+		if lval, rval, bothInt = convertFloatOperands(expr.Operator, left, right); bothInt == true {
+			return int(lval) + int(rval)
+		}
+		return lval + rval
 	case TokenStar:
-		lval, rval := convertNumberOperands(expr.Operator, left, right)
+		if lval, rval, bothInt = convertFloatOperands(expr.Operator, left, right); bothInt == true {
+			return int(lval) + int(rval)
+		}
 		return lval * rval
 	case TokenSlash:
-		lval, rval := convertNumberOperands(expr.Operator, left, right)
+		if lval, rval, bothInt = convertFloatOperands(expr.Operator, left, right); bothInt == true {
+			return int(lval) / int(rval)
+		}
 		return lval / rval
 	case TokenPercent:
-		lval, rval := convertNumberOperands(expr.Operator, left, right)
+		if lval, rval, bothInt = convertFloatOperands(expr.Operator, left, right); bothInt == false {
+			errmsg := "both operands both be integers."
+			RuntimeError(expr.Operator, errmsg)
+			panic(errmsg)
+		}
 		return int(lval) % int(rval)
 	default:
 		return nil
@@ -131,37 +146,41 @@ func (i *Interpreter) VisitUnaryExpr(expr *Unary) interface{} {
 	value := i.evaluate(expr.Right)
 	switch operator.Type {
 	case TokenMinus:
-		num := convertNumberOperand(operator, value)
-		return 0 - num
+		num, isInt := convertNumberOperand(operator, value)
+		if isInt == true {
+			return int(-num)
+		}
+		return -num
 	case TokenBang:
 		return !isTruthy(value)
 	}
 	return nil
 }
 
-func convertNumberOperand(operator *Token, operand interface{}) float64 {
-	val, ok := operand.(float64)
-	if ok == true {
-		return val
+// returns a number & a bool indicates if this number is int.
+func convertNumberOperand(operator *Token, operand interface{}) (float64, bool) {
+	if val, ok := operand.(float64); ok == true {
+		return val, false
 	}
+
+	if val, ok := operand.(int); ok == true {
+		return float64(val), true
+	}
+
 	errmsg := "Operand must be number."
 	RuntimeError(operator, errmsg)
 	panic(errmsg)
 }
 
-func convertNumberOperands(operator *Token, left, right interface{}) (float64, float64) {
-	lval, ok1 := left.(float64)
-	rval, ok2 := right.(float64)
+// returns both operands as float64, & a bool value indicates if both operands are int.
+func convertFloatOperands(operator *Token, left, right interface{}) (float64, float64, bool) {
+	lval, isInt1 := convertNumberOperand(operator, left)
+	rval, isInt2 := convertNumberOperand(operator, right)
 
-	if ok1 == true && ok2 == true {
-		return lval, rval
-	}
-	errmsg := "Operands must be number."
-	RuntimeError(operator, errmsg)
-	panic(errmsg)
+	return lval, rval, isInt1 && isInt2
 }
 
-func isEqual(left, right interface{}) bool {
+func equal(left, right interface{}) bool {
 	switch lval := left.(type) {
 	case string, float64:
 		rval, ok := right.(float64)

@@ -263,6 +263,8 @@ func (s *Scanner) number() {
 		return
 	}
 
+	// If it is an integer, keep the internal representation as integer at scanning.
+	// It helps when interpreting modulo expression, e.g. 5 % 2, which requires both operands be integers.
 	if isInt == true {
 		s.addToken(TokenNumber, int(value))
 	} else {
