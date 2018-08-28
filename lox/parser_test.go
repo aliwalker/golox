@@ -320,3 +320,14 @@ func TestPrecedence(t *testing.T) {
 	}
 	runChecks(t, runs)
 }
+
+func TestSyntaxError(t *testing.T) {
+	scanner := NewScanner("1 + 2 *3")
+	tokens := scanner.ScanTokens()
+	parser := NewParser(tokens)
+	parser.Parse()
+
+	if parser.hadError != true {
+		t.Error("expect syntax error.")
+	}
+}

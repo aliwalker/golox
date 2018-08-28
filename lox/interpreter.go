@@ -174,14 +174,12 @@ func isEqual(left, right interface{}) bool {
 }
 
 func isTruthy(object interface{}) bool {
-	literal, ok := object.(*Literal)
-	if ok == true && literal.Value == nil {
+	switch val := object.(type) {
+	case nil:
 		return false
+	case bool:
+		return val
+	default:
+		return true
 	}
-
-	boolean, ok := literal.Value.(bool)
-	if ok == true && boolean == false {
-		return false
-	}
-	return true
 }

@@ -238,6 +238,7 @@ func (s *Scanner) identifier() {
 	s.Tokens = append(s.Tokens, NewToken(t, lexeme, nil, s.line))
 }
 
+// TODO: fix internal implementation to support int and float64.
 func (s *Scanner) number() {
 	for isDigit(s.peek()) {
 		s.advance()
