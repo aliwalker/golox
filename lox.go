@@ -3,9 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"golox/lox"
 	"io/ioutil"
 	"os"
+
+	"github.com/aliwalker/golox/lox"
 )
 
 var interpreter = lox.NewInterpreter()

@@ -42,3 +42,8 @@ func TestBinaryExpr(t *testing.T) {
 	runExpr(t, "1 - 2", float64(-1))
 	runExpr(t, "5 % 2", 1)
 }
+
+func TestLogicalExpr(t *testing.T) {
+	runExpr(t, "true and false", false)
+	runExpr(t, "nil or 1", float64(1))
+}
