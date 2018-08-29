@@ -57,8 +57,9 @@ func runErrStmt(t *testing.T, src string) {
 	}
 }
 
-func TestRunExprStmt(t *testing.T) {
+func TestRunStmt(t *testing.T) {
 	runStmt(t, "123;")
+	runStmt(t, "var a; a = 2;") // test var & assign stmts.
 }
 func TestPrintStmt(t *testing.T) {
 	runStmt(t, "print \"hello\";")
@@ -113,5 +114,6 @@ func TestRuntimeError(t *testing.T) {
 	runErrStmt(t, "-\"a string\"")
 	runErrStmt(t, "5.0 % 2")
 	runErrStmt(t, "\"a string\" % \"another string\"")
-	runErrStmt(t, "a;") // due to variable a is undefined.
+	runErrStmt(t, "a;")     // due to variable `a`` is not defined.
+	runErrStmt(t, "a = 1;") // due to variable `a` is not defined.
 }

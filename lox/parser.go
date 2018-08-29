@@ -179,6 +179,20 @@ func (p *Parser) expression() Expr {
 func (p *Parser) assignment() Expr {
 	expr := p.or()
 
+	// call assignment recursively because it's right associative.
+	if p.match(TokenEqual) {
+		equals := p.previous()
+		value := p.assignment()
+
+		if varExpr, ok := expr.(*Variable); ok {
+			name := varExpr.name
+			return NewAssign(name, value)
+		}
+
+		errmsg := "invalid assign target."
+		ParsingError(equals, errmsg)
+		panic(errmsg)
+	}
 	// let's skip it until we define variable.
 	return expr
 }

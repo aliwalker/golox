@@ -69,6 +69,7 @@ func (i *Interpreter) VisitVarStmt(stmt *Var) interface{} {
 
 func (i *Interpreter) VisitAssignExpr(expr *Assign) interface{} {
 	value := i.evaluate(expr.Value)
+	i.environment.Assign(expr.Name, value)
 	return value
 }
 
@@ -180,7 +181,7 @@ func (i *Interpreter) VisitUnaryExpr(expr *Unary) interface{} {
 }
 
 func (i *Interpreter) VisitVariableExpr(expr *Variable) interface{} {
-	val := i.environment.Get(expr.name)
+	val := lookUpVariable(i.environment, expr.name)
 	return val
 }
 
