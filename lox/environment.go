@@ -17,9 +17,7 @@ func (e *Environment) Get(name *Token) interface{} {
 	if val, ok := e.values[name.Lexeme]; ok == true {
 		return val
 	}
-	errmsg := "undefined variable '" + name.Lexeme + "'."
-	RuntimeError(name, errmsg)
-	panic(errmsg)
+	panic(NewRuntimeError(name, "undefined variable '"+name.Lexeme+"'."))
 }
 
 func (e *Environment) Assign(name *Token, value interface{}) {
@@ -27,7 +25,5 @@ func (e *Environment) Assign(name *Token, value interface{}) {
 		e.values[name.Lexeme] = value
 		return
 	}
-	errmsg := "undefined variable '" + name.Lexeme + "'."
-	RuntimeError(name, errmsg)
-	panic(errmsg)
+	panic(NewRuntimeError(name, "undefined variable '"+name.Lexeme+"'."))
 }

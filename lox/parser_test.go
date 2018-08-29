@@ -37,6 +37,16 @@ func parseSingleLine(t *testing.T, source string) []Stmt {
 	return stmts
 }
 
+func parseErrStmt(t *testing.T, source string) {
+	scanner := NewScanner(source)
+	parser := NewParser(scanner.ScanTokens())
+	_, hadError := parser.Parse()
+
+	if hadError != true {
+		t.Error("expect parsing error.")
+	}
+}
+
 // args passed to check helpers.
 // Operator's TokenType is always the first arg, if there is no operator(e.g, primary) pass 0.
 // args for each Expr or Stmt are grouped. From root of an AST down to each leaves.
@@ -322,12 +332,7 @@ func TestPrecedence(t *testing.T) {
 }
 
 func TestSyntaxError(t *testing.T) {
-	scanner := NewScanner("1 + 2 *3")
-	tokens := scanner.ScanTokens()
-	parser := NewParser(tokens)
-	parser.Parse()
-
-	if parser.hadError != true {
-		t.Error("expect syntax error.")
-	}
+	parseErrStmt(t, "1 + 2 * 3")         // statements require semicolon.
+	parseErrStmt(t, "\"string\" = 123;") // invalid assign target.
+	parseErrStmt(t, "1err;")             // unrecognized token.
 }

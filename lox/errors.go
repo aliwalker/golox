@@ -2,25 +2,59 @@ package lox
 
 import "fmt"
 
-func RuntimeError(token *Token, message string) {
-	report(token.Line, " at '"+token.Lexeme+"'", "Runtime Error! "+message)
+type LexingError struct {
+	line    int
+	message string
 }
 
-// ParsingError reports a parsing error.
-func ParsingError(token *Token, message string) {
-	if token.Type == TokenEOF {
-		report(token.Line, " at end", message)
-	} else {
-		report(token.Line, " at '"+token.Lexeme+"'", message)
+func NewLexingError(line int, message string) error {
+	return &LexingError{line, message}
+}
+
+func (err *LexingError) Error() string {
+	return fmt.Sprintf("[line %v] Error: %v\n", err.line, err.message)
+}
+
+// ParsingError occurs when there's syntax error.
+type ParsingError struct {
+	token   *Token
+	message string
+}
+
+// NewParsingError returns a parsing error.
+func NewParsingError(token *Token, message string) error {
+	return &ParsingError{token, message}
+}
+
+// Error implements the built-in error interface.
+func (err *ParsingError) Error() string {
+	line := err.token.Line
+	where := err.token.Lexeme
+	message := err.message
+
+	if err.token.Type == TokenEOF {
+		where = "end"
 	}
+	return fmt.Sprintf("[line %v] Error at %v: %v\n", line, where, message)
 }
 
-// LexingError reports a lexing error.
-func LexingError(line int, message string) {
-	report(line, "", message)
+type RuntimeError struct {
+	token   *Token
+	message string
 }
 
-// Report to stdin.
-func report(line int, where, message string) {
-	fmt.Printf("[line %v] Error %v: %v\n", line, where, message)
+func NewRuntimeError(token *Token, message string) error {
+	return &RuntimeError{token, message}
+}
+
+func (err *RuntimeError) Error() string {
+	line := err.token.Line
+	where := err.token.Lexeme
+	message := err.message
+
+	if err.token.Type == TokenEOF {
+		where = "end"
+	}
+
+	return fmt.Sprintf("[line %v] Runtime Error at %v: %v\n", line, where, message)
 }

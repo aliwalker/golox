@@ -109,11 +109,11 @@ func TestLogicalExpr(t *testing.T) {
 }
 
 func TestRuntimeError(t *testing.T) {
-	runErrStmt(t, "true - true")
-	runErrStmt(t, "1 + \"a string\"")
-	runErrStmt(t, "-\"a string\"")
-	runErrStmt(t, "5.0 % 2")
-	runErrStmt(t, "\"a string\" % \"another string\"")
+	runErrStmt(t, "true - true;")
+	runErrStmt(t, "1 + \"a string\";")
+	runErrStmt(t, "-\"a string\";")
+	runErrStmt(t, "5.0 % 2;")
+	runErrStmt(t, "\"a string\" % \"another string\";")
 	runErrStmt(t, "a;")     // due to variable `a`` is not defined.
 	runErrStmt(t, "a = 1;") // due to variable `a` is not defined.
 }

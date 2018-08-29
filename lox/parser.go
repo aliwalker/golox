@@ -1,5 +1,9 @@
 package lox
 
+import (
+	"fmt"
+)
+
 // Parser parses the tokens into an AST.
 type Parser struct {
 	tokens   []*Token
@@ -35,8 +39,7 @@ func (p *Parser) consume(t TokenType, message string) *Token {
 	if p.check(t) {
 		return p.advance()
 	}
-	ParsingError(p.peek(), message)
-	panic(message)
+	panic(NewParsingError(p.peek(), message))
 }
 
 func (p *Parser) end() bool {
@@ -120,7 +123,11 @@ func (p *Parser) Parse() ([]Stmt, bool) {
 
 func (p *Parser) declaration() Stmt {
 	defer func() {
-		if r := recover(); r != nil {
+		if val := recover(); val != nil {
+			// might trigger another panic if it is not a Parsing Error.
+			parsingError := val.(*ParsingError)
+			fmt.Println(parsingError.Error())
+
 			p.hadError = true
 			p.synchronize()
 		}
@@ -132,7 +139,6 @@ func (p *Parser) declaration() Stmt {
 	default:
 		return p.statement()
 	}
-	return nil
 }
 
 func (p *Parser) varDeclaration() Stmt {
@@ -190,8 +196,7 @@ func (p *Parser) assignment() Expr {
 		}
 
 		errmsg := "invalid assign target."
-		ParsingError(equals, errmsg)
-		panic(errmsg)
+		panic(NewParsingError(equals, errmsg))
 	}
 	// let's skip it until we define variable.
 	return expr
@@ -292,7 +297,6 @@ func (p *Parser) primary() Expr {
 		p.consume(TokenRightParen, "expect ')' after expression.")
 		return NewGrouping(expr)
 	default:
-		ParsingError(p.peek(), "expect expression.")
-		panic("expect expression.")
+		panic(NewParsingError(p.peek(), "expect expression."))
 	}
 }

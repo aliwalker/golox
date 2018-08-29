@@ -19,7 +19,9 @@ func NewInterpreter() *Interpreter {
 
 func (i *Interpreter) Interprete(stmts []Stmt) (hadRuntimeError bool) {
 	defer func() {
-		if r := recover(); r != nil {
+		if val := recover(); val != nil {
+			runtimeError := val.(*RuntimeError)
+			fmt.Println(runtimeError.Error())
 			i.hadRuntimeError = true
 		}
 		hadRuntimeError = i.hadRuntimeError
@@ -129,9 +131,7 @@ func (i *Interpreter) VisitBinaryExpr(expr *Binary) interface{} {
 		return lval / rval
 	case TokenPercent:
 		if lval, rval, bothInt = convertFloatOperands(expr.Operator, left, right); bothInt == false {
-			errmsg := "both operands both be integers."
-			RuntimeError(expr.Operator, errmsg)
-			panic(errmsg)
+			panic(NewRuntimeError(expr.Operator, "both operands both be integers."))
 		}
 		return int(lval) % int(rval)
 	default:
@@ -195,9 +195,7 @@ func convertNumberOperand(operator *Token, operand interface{}) (float64, bool) 
 		return float64(val), true
 	}
 
-	errmsg := "Operand must be number."
-	RuntimeError(operator, errmsg)
-	panic(errmsg)
+	panic(NewRuntimeError(operator, "Operand must be number."))
 }
 
 // returns both operands as float64, & a bool value indicates if both operands are int.

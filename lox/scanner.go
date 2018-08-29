@@ -47,6 +47,13 @@ func NewScanner(source string) *Scanner {
 
 // ScanTokens returns a list of tokens from the source code.
 func (s *Scanner) ScanTokens() []*Token {
+	defer func() {
+		if val := recover(); val != nil {
+			// repanic if it is not a LexingError.
+			lexingError := val.(*LexingError)
+			fmt.Println(lexingError.Error())
+		}
+	}()
 	for !s.end() {
 		s.start = s.current
 		s.scanToken()
@@ -118,16 +125,17 @@ func (s *Scanner) scanToken() {
 		} else if digit(c) {
 			s.number()
 		} else {
-			LexingError(s.line, "unexpected character.")
+			panic(NewLexingError(s.line, "unexpected character "+string(s.peek())))
 		}
 	}
 }
 
 func (s *Scanner) advance() rune {
-	ch, sz, err := s.reader.ReadRune()
-	if err != nil {
-		panic(fmt.Sprintf("advance error: %v", err))
-	}
+	// the caller of advance will ensure it is not at end.
+	ch, sz, _ := s.reader.ReadRune()
+	//if err != nil {
+	//	panic(fmt.Sprintf("advance error: %v", err))
+	//}
 	s.current += sz
 	return ch
 }
@@ -259,8 +267,7 @@ func (s *Scanner) number() {
 		32)
 
 	if err != nil {
-		LexingError(s.line, "error parsing number.")
-		return
+		panic(NewLexingError(s.line, "error parsing number."))
 	}
 
 	// If it is an integer, keep the internal representation as integer at scanning.
@@ -281,8 +288,7 @@ func (s *Scanner) string() {
 	}
 
 	if s.end() {
-		LexingError(s.line, "unterminated string.")
-		return
+		panic(NewLexingError(s.line, "unterminated string."))
 	}
 
 	s.advance()
