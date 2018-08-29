@@ -96,7 +96,7 @@ func (i *Interpreter) VisitBinaryExpr(expr *Binary) interface{} {
 		return lval + rval
 	case TokenStar:
 		if lval, rval, bothInt = convertFloatOperands(expr.Operator, left, right); bothInt == true {
-			return int(lval) + int(rval)
+			return int(lval) * int(rval)
 		}
 		return lval * rval
 	case TokenSlash:

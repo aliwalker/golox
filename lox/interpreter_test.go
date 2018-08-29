@@ -15,9 +15,6 @@ func runExpr(t *testing.T, src string, expectedVal interface{}) {
 	value := interpreter.evaluate(expr)
 
 	if value != expectedVal {
-		//if ival, ok := expectedVal.(int); ok == true && float64(ival) == value {
-		//	return
-		//}
 		t.Error(fmt.Sprintf("expect i.evaluate(expr) to be %v, but got %v", expectedVal, value))
 	}
 }
@@ -34,6 +31,9 @@ func runStmt(t *testing.T, src string) {
 	interpreter.Interprete(stmts)
 }
 
+func TestRunExprStmt(t *testing.T) {
+	runStmt(t, "123;")
+}
 func TestPrintStmt(t *testing.T) {
 	runStmt(t, "print \"hello\";")
 }
@@ -50,7 +50,7 @@ func TestGroupingExpr(t *testing.T) {
 	runExpr(t, "-(1 + 2)", -3)
 }
 func TestBinaryExpr(t *testing.T) {
-	//runExpr(t, "2 * 3 + 2", 8)
+	runExpr(t, "2 * 3 + 2", 8)
 	runExpr(t, "1 + 2 / 2", 2)
 	runExpr(t, "1 < 2", true)
 	runExpr(t, "1 == 2", false)
