@@ -6,10 +6,15 @@ import (
 
 type Interpreter struct {
 	hadRuntimeError bool
+	environment     *Environment
+	global          *Environment
 }
 
 func NewInterpreter() *Interpreter {
-	return &Interpreter{false}
+	global := NewEnvironment(nil)
+	environment := global
+
+	return &Interpreter{false, global, environment}
 }
 
 func (i *Interpreter) Interprete(stmts []Stmt) (hadRuntimeError bool) {
@@ -42,6 +47,23 @@ func (i *Interpreter) VisitExpressionStmt(stmt *Expression) interface{} {
 func (i *Interpreter) VisitPrintStmt(stmt *Print) interface{} {
 	val := i.evaluate(stmt.Expression)
 	fmt.Println(val)
+	return nil
+}
+
+func (i *Interpreter) VisitVarStmt(stmt *Var) interface{} {
+	// TODO: add scope variable.
+	var (
+		identifier  *Token
+		initializer Expr
+		initVal     interface{}
+	)
+
+	identifier = stmt.name
+	if initializer = stmt.expr; initializer != nil {
+		initVal = i.evaluate(initializer)
+	}
+
+	i.environment.Define(identifier.Lexeme, initVal)
 	return nil
 }
 
@@ -129,11 +151,11 @@ func (i *Interpreter) VisitLogicalExpr(expr *Logical) interface{} {
 	left := i.evaluate(expr.Left)
 
 	if expr.Operator.Type == TokenOr {
-		if isTruthy(left) {
+		if truthy(left) {
 			return left
 		}
 	} else { // TokenAnd
-		if !isTruthy(left) {
+		if !truthy(left) {
 			return left
 		}
 	}
@@ -152,9 +174,14 @@ func (i *Interpreter) VisitUnaryExpr(expr *Unary) interface{} {
 		}
 		return -num
 	case TokenBang:
-		return !isTruthy(value)
+		return !truthy(value)
 	}
 	return nil
+}
+
+func (i *Interpreter) VisitVariableExpr(expr *Variable) interface{} {
+	val := i.environment.Get(expr.name)
+	return val
 }
 
 // returns a number & a bool indicates if this number is int.
@@ -182,7 +209,7 @@ func convertFloatOperands(operator *Token, left, right interface{}) (float64, fl
 
 func equal(left, right interface{}) bool {
 	switch lval := left.(type) {
-	case string, float64:
+	case string, float64, int:
 		rval, ok := right.(float64)
 		if ok != true || lval != rval {
 			return false
@@ -192,7 +219,12 @@ func equal(left, right interface{}) bool {
 	return false
 }
 
-func isTruthy(object interface{}) bool {
+// TODO: add support to resolution pass.
+func lookUpVariable(env *Environment, name *Token) interface{} {
+	return env.Get(name)
+}
+
+func truthy(object interface{}) bool {
 	switch val := object.(type) {
 	case nil:
 		return false

@@ -3,6 +3,7 @@ package lox
 type StmtVisitor interface {
 	VisitExpressionStmt(stmt *Expression) interface{}
 	VisitPrintStmt(stmt *Print) interface{}
+	VisitVarStmt(stmt *Var) interface{}
 }
 
 type Stmt interface {
@@ -29,4 +30,16 @@ func NewPrint(expression Expr) Stmt {
 }
 func (expr *Print) Accept(v StmtVisitor) interface{} {
 	return v.VisitPrintStmt(expr)
+}
+
+type Var struct {
+	name *Token
+	expr Expr
+}
+
+func NewVar(name *Token, expr Expr) Stmt {
+	return &Var{name: name, expr: expr}
+}
+func (expr *Var) Accept(v StmtVisitor) interface{} {
+	return v.VisitVarStmt(expr)
 }

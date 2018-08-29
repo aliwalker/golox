@@ -47,7 +47,7 @@ func NewScanner(source string) *Scanner {
 
 // ScanTokens returns a list of tokens from the source code.
 func (s *Scanner) ScanTokens() []*Token {
-	for !s.isAtEnd() {
+	for !s.end() {
 		s.start = s.current
 		s.scanToken()
 	}
@@ -92,7 +92,7 @@ func (s *Scanner) scanToken() {
 
 	case '/':
 		if s.match('/') {
-			for s.peek() != '\n' && !s.isAtEnd() {
+			for s.peek() != '\n' && !s.end() {
 				s.advance()
 			}
 		} else {
@@ -112,10 +112,10 @@ func (s *Scanner) scanToken() {
 		s.string()
 
 	default:
-		if isAlpha(c) {
+		if alpha(c) {
 			// s.identifier covers keywords.
 			s.identifier()
-		} else if isDigit(c) {
+		} else if digit(c) {
 			s.number()
 		} else {
 			LexingError(s.line, "unexpected character.")
@@ -137,12 +137,12 @@ func (s *Scanner) addToken(t TokenType, literal interface{}) {
 	s.Tokens = append(s.Tokens, NewToken(t, lexeme, literal, s.line))
 }
 
-func (s *Scanner) isAtEnd() bool {
+func (s *Scanner) end() bool {
 	return s.current >= len(s.source)
 }
 
 func (s *Scanner) match(expected rune) bool {
-	if s.isAtEnd() {
+	if s.end() {
 		return false
 	}
 
@@ -180,7 +180,7 @@ func (s *Scanner) addIfMatch(expected rune, expectedType TokenType, altType Toke
 }
 
 func (s *Scanner) peek() rune {
-	if s.isAtEnd() {
+	if s.end() {
 		return 0
 	}
 
@@ -202,7 +202,7 @@ func (s *Scanner) peekNext() rune {
 		ch  rune
 	)
 
-	for ; i < 2 && !s.isAtEnd() && err == nil; i++ {
+	for ; i < 2 && !s.end() && err == nil; i++ {
 		ch, _, err = s.reader.ReadRune()
 	}
 
@@ -220,8 +220,8 @@ func (s *Scanner) peekNext() rune {
 }
 
 func (s *Scanner) identifier() {
-	for !s.isAtEnd() {
-		if isAlphanumeric(s.peek()) {
+	for !s.end() {
+		if alphanumeric(s.peek()) {
 			s.advance()
 		} else {
 			break
@@ -241,15 +241,15 @@ func (s *Scanner) identifier() {
 func (s *Scanner) number() {
 	var isInt = true
 
-	for isDigit(s.peek()) {
+	for digit(s.peek()) {
 		s.advance()
 	}
 
 	// check if it is a floating point number.
-	if s.peek() == '.' && isDigit(s.peekNext()) {
+	if s.peek() == '.' && digit(s.peekNext()) {
 		s.advance()
 		isInt = false
-		for isDigit(s.peek()) {
+		for digit(s.peek()) {
 			s.advance()
 		}
 	}
@@ -273,14 +273,14 @@ func (s *Scanner) number() {
 }
 
 func (s *Scanner) string() {
-	for s.peek() != '"' && !s.isAtEnd() {
+	for s.peek() != '"' && !s.end() {
 		if s.peek() == '\n' {
 			s.line++
 		}
 		s.advance()
 	}
 
-	if s.isAtEnd() {
+	if s.end() {
 		LexingError(s.line, "unterminated string.")
 		return
 	}
@@ -289,14 +289,14 @@ func (s *Scanner) string() {
 	s.addToken(TokenString, s.source[s.start+1:s.current-1])
 }
 
-func isAlpha(ch rune) bool {
+func alpha(ch rune) bool {
 	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch == '_')
 }
 
-func isAlphanumeric(ch rune) bool {
-	return isDigit(ch) || isAlpha(ch)
+func alphanumeric(ch rune) bool {
+	return digit(ch) || alpha(ch)
 }
 
-func isDigit(ch rune) bool {
+func digit(ch rune) bool {
 	return (ch >= '0' && ch <= '9')
 }

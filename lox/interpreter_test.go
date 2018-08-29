@@ -2,6 +2,7 @@ package lox
 
 import (
 	"fmt"
+	"math"
 	"testing"
 )
 
@@ -15,6 +16,14 @@ func runExpr(t *testing.T, src string, expectedVal interface{}) {
 	value := interpreter.evaluate(expr)
 
 	if value != expectedVal {
+		// I know this is ugly...
+		if v1, ok1 := value.(float64); ok1 {
+			if v2, ok2 := expectedVal.(float64); ok2 {
+				if math.Floor(v1*100)/100 == math.Floor(v2*100)/100 {
+					return
+				}
+			}
+		}
 		t.Error(fmt.Sprintf("expect i.evaluate(expr) to be %v, but got %v", expectedVal, value))
 	}
 }
@@ -29,6 +38,23 @@ func runStmt(t *testing.T, src string) {
 		t.Error("syntax error.")
 	}
 	interpreter.Interprete(stmts)
+
+	if interpreter.hadRuntimeError != false {
+		t.Error("runtime error.")
+	}
+}
+
+func runErrStmt(t *testing.T, src string) {
+	scanner := NewScanner(src)
+	parser := NewParser(scanner.ScanTokens())
+	stmts, _ := parser.Parse()
+
+	interpreter := NewInterpreter()
+	interpreter.Interprete(stmts)
+
+	if interpreter.hadRuntimeError != true {
+		t.Error("expect runtime error.")
+	}
 }
 
 func TestRunExprStmt(t *testing.T) {
@@ -37,6 +63,10 @@ func TestRunExprStmt(t *testing.T) {
 func TestPrintStmt(t *testing.T) {
 	runStmt(t, "print \"hello\";")
 }
+func TestVarStmt(t *testing.T) {
+	runStmt(t, "var a = 1;")
+	runStmt(t, "var a = 1; a;")
+}
 func TestLiteralExpr(t *testing.T) {
 	runExpr(t, "\"a test string.\"", "a test string.")
 	runExpr(t, "5", 5)
@@ -44,6 +74,8 @@ func TestLiteralExpr(t *testing.T) {
 func TestUnaryExpr(t *testing.T) {
 	runExpr(t, "!true", false)
 	runExpr(t, "-5", -5)
+	runExpr(t, "-1.1", -1.1)
+	runExpr(t, "!1", false)
 }
 func TestGroupingExpr(t *testing.T) {
 	runExpr(t, "(1 + 2)", 3)
@@ -51,17 +83,35 @@ func TestGroupingExpr(t *testing.T) {
 }
 func TestBinaryExpr(t *testing.T) {
 	runExpr(t, "2 * 3 + 2", 8)
+	runExpr(t, "1.0 + 2.0", 3.0)
+	runExpr(t, "2.1 + 2.5", 4.6)
+	runExpr(t, "1.1 - 0.1", 1.0)
+	runExpr(t, "2.0 * 3.0", 6.0)
+	runExpr(t, "2.2 / 2.0", 1.1)
 	runExpr(t, "1 + 2 / 2", 2)
 	runExpr(t, "1 < 2", true)
+	runExpr(t, "1 <= 1", true)
 	runExpr(t, "1 == 2", false)
+	runExpr(t, "1.1 == 1.1", true)
 	runExpr(t, "3 > 3", false)
 	runExpr(t, "3 >= 3", true)
 	runExpr(t, "1 != 2", true)
 	runExpr(t, "1 - 2", -1)
 	runExpr(t, "5 % 2", 1)
+	runExpr(t, "\"adorable\" + \" lady\"", "adorable lady")
 }
 
 func TestLogicalExpr(t *testing.T) {
 	runExpr(t, "true and false", false)
+	runExpr(t, "false and true", false)
 	runExpr(t, "nil or 1", 1)
+}
+
+func TestRuntimeError(t *testing.T) {
+	runErrStmt(t, "true - true")
+	runErrStmt(t, "1 + \"a string\"")
+	runErrStmt(t, "-\"a string\"")
+	runErrStmt(t, "5.0 % 2")
+	runErrStmt(t, "\"a string\" % \"another string\"")
+	runErrStmt(t, "a;") // due to variable a is undefined.
 }

@@ -13,14 +13,14 @@ func NewParser(tokens []*Token) *Parser {
 }
 
 func (p *Parser) advance() *Token {
-	if !p.isAtEnd() {
+	if !p.end() {
 		p.current++
 	}
 	return p.previous()
 }
 
 func (p *Parser) check(t TokenType) bool {
-	if p.isAtEnd() {
+	if p.end() {
 		return false
 	}
 
@@ -39,7 +39,7 @@ func (p *Parser) consume(t TokenType, message string) *Token {
 	panic(message)
 }
 
-func (p *Parser) isAtEnd() bool {
+func (p *Parser) end() bool {
 	if p.tokens[p.current].Type == TokenEOF {
 		return true
 	}
@@ -65,7 +65,35 @@ func (p *Parser) previous() *Token {
 	return p.tokens[p.current-1]
 }
 
-// program			-> statement* EOF ;
+func (p *Parser) synchronize() {
+	p.advance()
+
+	for !p.end() {
+		if p.previous().Type == TokenSemi {
+			return
+		}
+
+		switch p.peek().Type {
+		case TokenClass,
+			TokenFun,
+			TokenVar,
+			TokenFor,
+			TokenIf,
+			TokenWhile,
+			TokenPrint,
+			TokenReturn:
+			return
+		default:
+			break
+		}
+
+		p.advance()
+	}
+}
+
+// program			-> declaration* EOF ;
+// declaration		-> varDeclaration ;
+// varDeclaration	-> "var" IDENTIFIER ( "=" expression )? ";" ;
 // statement		-> expreStmt | printStmt ;
 // printStmt		-> "print" expression ;
 // expreStmt		-> expression ;
@@ -82,18 +110,44 @@ func (p *Parser) previous() *Token {
 
 // Parse is the entry point of Parser.
 func (p *Parser) Parse() ([]Stmt, bool) {
-	defer func() {
-		if r := recover(); r != nil {
-			p.hadError = true
-		}
-	}()
-
 	var stmts []Stmt
-	for !p.isAtEnd() {
-		stmts = append(stmts, p.statement())
+	for !p.end() {
+		stmts = append(stmts, p.declaration())
 	}
 
 	return stmts, p.hadError
+}
+
+func (p *Parser) declaration() Stmt {
+	defer func() {
+		if r := recover(); r != nil {
+			p.hadError = true
+			p.synchronize()
+		}
+	}()
+
+	switch {
+	case p.match(TokenVar):
+		return p.varDeclaration()
+	default:
+		return p.statement()
+	}
+	return nil
+}
+
+func (p *Parser) varDeclaration() Stmt {
+	var (
+		name        *Token
+		initializer Expr
+	)
+
+	name = p.consume(TokenIdentifier, "expect variable name.")
+	if p.match(TokenEqual) {
+		initializer = p.expression()
+	}
+
+	p.consume(TokenSemi, "expect ';' after variable declaration.")
+	return NewVar(name, initializer)
 }
 
 func (p *Parser) statement() Stmt {
@@ -209,6 +263,8 @@ func (p *Parser) unary() Expr {
 
 func (p *Parser) primary() Expr {
 	switch {
+	case p.match(TokenIdentifier):
+		return NewVariable(p.previous())
 	case p.match(TokenFalse):
 		return NewLiteral(false)
 	case p.match(TokenTrue):

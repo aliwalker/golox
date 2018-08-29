@@ -7,6 +7,7 @@ type ExprVisitor interface {
 	VisitLiteralExpr(expr *Literal) interface{}
 	VisitLogicalExpr(expr *Logical) interface{}
 	VisitUnaryExpr(expr *Unary) interface{}
+	VisitVariableExpr(expr *Variable) interface{}
 }
 
 type Expr interface {
@@ -83,4 +84,15 @@ func NewUnary(operator *Token, right Expr) Expr {
 }
 func (expr *Unary) Accept(v ExprVisitor) interface{} {
 	return v.VisitUnaryExpr(expr)
+}
+
+type Variable struct {
+	name *Token
+}
+
+func NewVariable(name *Token) Expr {
+	return &Variable{name: name}
+}
+func (expr *Variable) Accept(v ExprVisitor) interface{} {
+	return v.VisitVariableExpr(expr)
 }
