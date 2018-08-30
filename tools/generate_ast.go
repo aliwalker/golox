@@ -31,6 +31,7 @@ func main() {
 	})
 
 	defineAst(out, "Stmt", []string{
+		"Block	: Stmts []Stmt",
 		"Expression	: Expression Expr",
 		"Print	: Expression Expr",
 		"Var	: name *Token, expr Expr",

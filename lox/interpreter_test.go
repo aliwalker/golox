@@ -47,8 +47,11 @@ func runStmt(t *testing.T, src string) {
 func runErrStmt(t *testing.T, src string) {
 	scanner := NewScanner(src)
 	parser := NewParser(scanner.ScanTokens())
-	stmts, _ := parser.Parse()
+	stmts, hadError := parser.Parse()
 
+	if hadError {
+		return
+	}
 	interpreter := NewInterpreter()
 	interpreter.Interprete(stmts)
 
@@ -60,6 +63,7 @@ func runErrStmt(t *testing.T, src string) {
 func TestRunStmt(t *testing.T) {
 	runStmt(t, "123;")
 	runStmt(t, "var a; a = 2;") // test var & assign stmts.
+	runStmt(t, "{ var a = 1; print a; }")
 }
 func TestPrintStmt(t *testing.T) {
 	runStmt(t, "print \"hello\";")
@@ -116,4 +120,6 @@ func TestRuntimeError(t *testing.T) {
 	runErrStmt(t, "\"a string\" % \"another string\";")
 	runErrStmt(t, "a;")     // due to variable `a`` is not defined.
 	runErrStmt(t, "a = 1;") // due to variable `a` is not defined.
+	runErrStmt(t, "var 1err = 123; 123;")
+	runErrStmt(t, "var a = 1; {\n\tvar b = 2;\n}\n\tprint b;")
 }

@@ -97,7 +97,8 @@ func (p *Parser) synchronize() {
 // program			-> declaration* EOF ;
 // declaration		-> varDeclaration ;
 // varDeclaration	-> "var" IDENTIFIER ( "=" expression )? ";" ;
-// statement		-> expreStmt | printStmt ;
+// statement		-> block | expreStmt | printStmt ;
+// block			-> "{" declaration* "}" ;
 // printStmt		-> "print" expression ;
 // expreStmt		-> expression ;
 // expression		-> assignment ;
@@ -160,9 +161,22 @@ func (p *Parser) statement() Stmt {
 	switch {
 	case p.match(TokenPrint):
 		return p.printStmt()
+	case p.match(TokenLeftBrace):
+		return p.block()
 	default:
 		return p.expressionStmt()
 	}
+}
+
+func (p *Parser) block() Stmt {
+	stmts := make([]Stmt, 0)
+
+	for !p.check(TokenRightBrace) && !p.end() {
+		stmts = append(stmts, p.declaration())
+	}
+
+	p.consume(TokenRightBrace, "expect '}' after block.")
+	return NewBlock(stmts)
 }
 
 func (p *Parser) printStmt() Stmt {

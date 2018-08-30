@@ -16,6 +16,8 @@ type Scanner struct {
 	current int
 	start   int
 	line    int
+
+	hadError bool
 }
 
 var keywords = map[string]TokenType{
@@ -42,13 +44,14 @@ func NewScanner(source string) *Scanner {
 	return &Scanner{
 		make([]*Token, 0),
 		source,
-		strings.NewReader(source), 0, 0, 1}
+		strings.NewReader(source), 0, 0, 1, false}
 }
 
 // ScanTokens returns a list of tokens from the source code.
 func (s *Scanner) ScanTokens() []*Token {
 	defer func() {
 		if val := recover(); val != nil {
+			s.hadError = true
 			// repanic if it is not a LexingError.
 			lexingError := val.(*LexingError)
 			fmt.Println(lexingError.Error())

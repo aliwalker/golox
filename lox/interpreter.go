@@ -41,6 +41,21 @@ func (i *Interpreter) execute(stmt Stmt) {
 	stmt.Accept(i)
 }
 
+func (i *Interpreter) VisitBlockStmt(stmt *Block) interface{} {
+	enclosingEnv := i.environment
+	i.environment = NewEnvironment(enclosingEnv)
+
+	defer func() {
+		i.environment = enclosingEnv
+	}()
+
+	for _, stmt := range stmt.Stmts {
+		i.execute(stmt)
+	}
+
+	return nil
+}
+
 func (i *Interpreter) VisitExpressionStmt(stmt *Expression) interface{} {
 	i.evaluate(stmt.Expression)
 	return nil

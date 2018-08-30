@@ -1,6 +1,7 @@
 package lox
 
 type StmtVisitor interface {
+	VisitBlockStmt(stmt *Block) interface{}
 	VisitExpressionStmt(stmt *Expression) interface{}
 	VisitPrintStmt(stmt *Print) interface{}
 	VisitVarStmt(stmt *Var) interface{}
@@ -8,6 +9,17 @@ type StmtVisitor interface {
 
 type Stmt interface {
 	Accept(v StmtVisitor) interface{}
+}
+
+type Block struct {
+	Stmts []Stmt
+}
+
+func NewBlock(stmts []Stmt) Stmt {
+	return &Block{Stmts: stmts}
+}
+func (expr *Block) Accept(v StmtVisitor) interface{} {
+	return v.VisitBlockStmt(expr)
 }
 
 type Expression struct {
