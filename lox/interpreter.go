@@ -176,8 +176,13 @@ func (i *Interpreter) VisitCallExpr(expr *Call) interface{} {
 		panic(NewRuntimeError(expr.Paren, fmt.Sprintf("expect %v arguments, but got %v", function.Arity(), len(expr.Arguments))))
 	}
 
+	args := make([]interface{}, 0)
+	for _, arg := range expr.Arguments {
+		args = append(args, i.evaluate(arg))
+	}
+
 	// TODO: add return value.
-	return function.Call(i, expr.Arguments)
+	return function.Call(i, args...)
 }
 
 func (i *Interpreter) VisitGroupingExpr(expr *Grouping) interface{} {

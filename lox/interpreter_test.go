@@ -131,4 +131,9 @@ func TestRuntimeError(t *testing.T) {
 	runErrStmt(t, "fun foo() { print foo }")
 	runErrStmt(t, "fun foo(1) { print foo; }")
 	runErrStmt(t, "fun foo(a1, a2, a3, a4, a5, a6, a7, a8, a9){}")
+	runErrStmt(t, "fun foo() { print foo; } foo();")
+	runErrStmt(t, "\"notAFun\"();")
+	runErrStmt(t, "45();")
+	runErrStmt(t, "foo();")
+	runErrStmt(t, "fun foo(a1, a2) { print a1 + a2; } foo(1, 2, 3)")
 }
