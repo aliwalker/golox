@@ -95,7 +95,10 @@ func (p *Parser) synchronize() {
 }
 
 // program			-> declaration* EOF ;
-// declaration		-> varDeclaration ;
+// declaration		-> varDeclaration | funDeclaration ;
+// funDeclaration	-> "fun" function ;
+// function			-> IDENTIFIER "(" parameters? ")" block ;
+// parameters		-> IDENTIFIER ( "," IDENTIFIER )* ;
 // varDeclaration	-> "var" IDENTIFIER ( "=" expression )? ";" ;
 // statement		-> block | expreStmt | printStmt ;
 // block			-> "{" declaration* "}" ;
@@ -109,7 +112,8 @@ func (p *Parser) synchronize() {
 // comparison		-> addition ( ( "<" | "<=" | ">" | ">=" ) addition )* ;
 // addition			-> multiplication ( ( "+" | "-" ) multiplication )* ;
 // multiplication 	-> unary ( ( "*" | "/" | "%" ) unary )* ;
-// unary			-> ( "!" | "-" )? primary ;
+// unary			-> ( "!" | "-" ) unary | call ;
+// call				-> primary ( "(" expression ( "," expression )* "}" ) ;
 // primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | "true" | "false" | "nil" ;
 
 // Parse is the entry point of Parser.
@@ -137,9 +141,44 @@ func (p *Parser) declaration() Stmt {
 	switch {
 	case p.match(TokenVar):
 		return p.varDeclaration()
+	case p.match(TokenFun):
+		return p.function("function")
 	default:
 		return p.statement()
 	}
+}
+
+func (p *Parser) function(kind string) Stmt {
+	var (
+		name   *Token
+		params []*Token
+		body   []Stmt
+	)
+
+	name = p.consume(TokenIdentifier, "expect IDENTIFIER after 'fun'.")
+	params = make([]*Token, 0)
+
+	// parameters.
+	p.consume(TokenLeftParen, "expect '(' after IDENTIFIER.")
+	if !p.check(TokenRightParen) {
+		for true {
+			param := p.consume(TokenIdentifier, "expect TokenIdentifier as param.")
+			params = append(params, param)
+
+			if len(params) > 8 {
+				panic(NewParsingError(p.peek(), "cannot have more than 8 parameters."))
+			}
+			if !p.match(TokenComma) {
+				break
+			}
+		}
+	}
+	p.consume(TokenRightParen, "expect ')' after param list.")
+
+	// body.
+	p.consume(TokenLeftBrace, "expect '{' before function body.")
+	body = p.block()
+	return NewFunction(name, params, body)
 }
 
 func (p *Parser) varDeclaration() Stmt {
@@ -162,13 +201,13 @@ func (p *Parser) statement() Stmt {
 	case p.match(TokenPrint):
 		return p.printStmt()
 	case p.match(TokenLeftBrace):
-		return p.block()
+		return NewBlock(p.block())
 	default:
 		return p.expressionStmt()
 	}
 }
 
-func (p *Parser) block() Stmt {
+func (p *Parser) block() []Stmt {
 	stmts := make([]Stmt, 0)
 
 	for !p.check(TokenRightBrace) && !p.end() {
@@ -176,7 +215,7 @@ func (p *Parser) block() Stmt {
 	}
 
 	p.consume(TokenRightBrace, "expect '}' after block.")
-	return NewBlock(stmts)
+	return stmts
 }
 
 func (p *Parser) printStmt() Stmt {
@@ -290,8 +329,42 @@ func (p *Parser) unary() Expr {
 		value := p.unary()
 		return NewUnary(operator, value)
 	}
-	// TODO: call p.call() when function call is implemented.
-	return p.primary()
+
+	return p.call()
+}
+
+func (p *Parser) call() Expr {
+	var (
+		expr      Expr
+		arguments []Expr
+		paren     *Token
+	)
+
+	expr = p.primary()
+
+	if p.check(TokenLeftParen) {
+		p.advance()
+		paren = p.previous()
+		arguments = p.arguments()
+		expr = NewCall(expr, paren, arguments)
+	}
+
+	return expr
+}
+
+func (p *Parser) arguments() []Expr {
+	exprs := make([]Expr, 0)
+
+	for !p.check(TokenRightParen) {
+		expr := p.expression()
+		exprs = append(exprs, expr)
+		if p.check(TokenRightParen) {
+			break
+		}
+		p.consume(TokenComma, "expect ';' to separate arguments.")
+	}
+	p.consume(TokenRightParen, "expect ')' after argument list.")
+	return exprs
 }
 
 func (p *Parser) primary() Expr {

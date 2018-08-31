@@ -3,6 +3,7 @@ package lox
 type ExprVisitor interface {
 	VisitAssignExpr(expr *Assign) interface{}
 	VisitBinaryExpr(expr *Binary) interface{}
+	VisitCallExpr(expr *Call) interface{}
 	VisitGroupingExpr(expr *Grouping) interface{}
 	VisitLiteralExpr(expr *Literal) interface{}
 	VisitLogicalExpr(expr *Logical) interface{}
@@ -37,6 +38,19 @@ func NewBinary(left Expr, operator *Token, right Expr) Expr {
 }
 func (expr *Binary) Accept(v ExprVisitor) interface{} {
 	return v.VisitBinaryExpr(expr)
+}
+
+type Call struct {
+	Callee    Expr
+	Paren     *Token
+	Arguments []Expr
+}
+
+func NewCall(callee Expr, paren *Token, arguments []Expr) Expr {
+	return &Call{Callee: callee, Paren: paren, Arguments: arguments}
+}
+func (expr *Call) Accept(v ExprVisitor) interface{} {
+	return v.VisitCallExpr(expr)
 }
 
 type Grouping struct {

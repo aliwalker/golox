@@ -23,6 +23,7 @@ func main() {
 	defineAst(out, "Expr", []string{
 		"Assign		: Name *Token, Value Expr",
 		"Binary		: Left Expr, Operator *Token, Right Expr",
+		"Call		: Callee Expr, Paren *Token, Arguments []Expr",
 		"Grouping	: Expression Expr",
 		"Literal	: Value interface{}",
 		"Logical	: Left Expr, Operator *Token, Right Expr",
@@ -32,6 +33,7 @@ func main() {
 
 	defineAst(out, "Stmt", []string{
 		"Block	: Stmts []Stmt",
+		"Function	: Name *Token, Params []*Token, Body []Stmt",
 		"Expression	: Expression Expr",
 		"Print	: Expression Expr",
 		"Var	: name *Token, expr Expr",

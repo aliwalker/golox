@@ -2,6 +2,7 @@ package lox
 
 type StmtVisitor interface {
 	VisitBlockStmt(stmt *Block) interface{}
+	VisitFunctionStmt(stmt *Function) interface{}
 	VisitExpressionStmt(stmt *Expression) interface{}
 	VisitPrintStmt(stmt *Print) interface{}
 	VisitVarStmt(stmt *Var) interface{}
@@ -20,6 +21,19 @@ func NewBlock(stmts []Stmt) Stmt {
 }
 func (expr *Block) Accept(v StmtVisitor) interface{} {
 	return v.VisitBlockStmt(expr)
+}
+
+type Function struct {
+	Name   *Token
+	Params []*Token
+	Body   []Stmt
+}
+
+func NewFunction(name *Token, params []*Token, body []Stmt) Stmt {
+	return &Function{Name: name, Params: params, Body: body}
+}
+func (expr *Function) Accept(v StmtVisitor) interface{} {
+	return v.VisitFunctionStmt(expr)
 }
 
 type Expression struct {

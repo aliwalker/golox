@@ -65,6 +65,12 @@ func TestRunStmt(t *testing.T) {
 	runStmt(t, "var a; a = 2;") // test var & assign stmts.
 	runStmt(t, "{ var a = 1; print a; }")
 }
+
+func TestFuncStmt(t *testing.T) {
+	runStmt(t, "fun foo() { print \"bar\"; }")
+	runStmt(t, "fun bar(foobar) { print foobar;  }")
+	runStmt(t, "fun foo() { print \"bar\"; } \nfoo();")
+}
 func TestPrintStmt(t *testing.T) {
 	runStmt(t, "print \"hello\";")
 }
@@ -122,4 +128,7 @@ func TestRuntimeError(t *testing.T) {
 	runErrStmt(t, "a = 1;") // due to variable `a` is not defined.
 	runErrStmt(t, "var 1err = 123; 123;")
 	runErrStmt(t, "var a = 1; {\n\tvar b = 2;\n}\n\tprint b;")
+	runErrStmt(t, "fun foo() { print foo }")
+	runErrStmt(t, "fun foo(1) { print foo; }")
+	runErrStmt(t, "fun foo(a1, a2, a3, a4, a5, a6, a7, a8, a9){}")
 }

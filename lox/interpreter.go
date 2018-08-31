@@ -41,23 +41,33 @@ func (i *Interpreter) execute(stmt Stmt) {
 	stmt.Accept(i)
 }
 
-func (i *Interpreter) VisitBlockStmt(stmt *Block) interface{} {
-	enclosingEnv := i.environment
-	i.environment = NewEnvironment(enclosingEnv)
+// execute a block in `env`.
+func (i *Interpreter) executeBlock(stmts []Stmt, env *Environment) {
+	prevEnv := i.environment
+	i.environment = env
 
 	defer func() {
-		i.environment = enclosingEnv
+		i.environment = prevEnv
 	}()
 
-	for _, stmt := range stmt.Stmts {
+	for _, stmt := range stmts {
 		i.execute(stmt)
 	}
+}
 
+func (i *Interpreter) VisitBlockStmt(stmt *Block) interface{} {
+	i.executeBlock(stmt.Stmts, NewEnvironment(i.environment))
 	return nil
 }
 
 func (i *Interpreter) VisitExpressionStmt(stmt *Expression) interface{} {
 	i.evaluate(stmt.Expression)
+	return nil
+}
+
+// convert function ast node to runtime function object.
+func (i *Interpreter) VisitFunctionStmt(stmt *Function) interface{} {
+	i.environment.Define(stmt.Name.Lexeme, NewLoxFunction(stmt, i.environment))
 	return nil
 }
 
@@ -152,6 +162,22 @@ func (i *Interpreter) VisitBinaryExpr(expr *Binary) interface{} {
 	default:
 		return nil
 	}
+}
+
+func (i *Interpreter) VisitCallExpr(expr *Call) interface{} {
+	callee := i.evaluate(expr.Callee)
+
+	function, ok := callee.(Callable)
+	if ok != true {
+		panic(NewRuntimeError(expr.Paren, "callee is not callable."))
+	}
+
+	if len(expr.Arguments) != function.Arity() {
+		panic(NewRuntimeError(expr.Paren, fmt.Sprintf("expect %v arguments, but got %v", function.Arity(), len(expr.Arguments))))
+	}
+
+	// TODO: add return value.
+	return function.Call(i, expr.Arguments)
 }
 
 func (i *Interpreter) VisitGroupingExpr(expr *Grouping) interface{} {
