@@ -28,15 +28,17 @@ func main() {
 		"Literal	: Value interface{}",
 		"Logical	: Left Expr, Operator *Token, Right Expr",
 		"Unary		: Operator *Token, Right Expr",
-		"Variable	: name *Token",
+		"Variable	: Name *Token",
 	})
 
 	defineAst(out, "Stmt", []string{
-		"Block	: Stmts []Stmt",
+		"Block		: Stmts []Stmt",
 		"Function	: Name *Token, Params []*Token, Body []Stmt",
 		"Expression	: Expression Expr",
-		"Print	: Expression Expr",
-		"Var	: name *Token, expr Expr",
+		"If			: Condition Expr, ThenBranch Stmt, ElseBranch Stmt",
+		"Print		: Expression Expr",
+		"Var		: Name *Token, Initializer Expr",
+		"While		: Condition Expr, Body Stmt",
 	})
 }
 

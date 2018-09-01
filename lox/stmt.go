@@ -4,8 +4,10 @@ type StmtVisitor interface {
 	VisitBlockStmt(stmt *Block) interface{}
 	VisitFunctionStmt(stmt *Function) interface{}
 	VisitExpressionStmt(stmt *Expression) interface{}
+	VisitIfStmt(stmt *If) interface{}
 	VisitPrintStmt(stmt *Print) interface{}
 	VisitVarStmt(stmt *Var) interface{}
+	VisitWhileStmt(stmt *While) interface{}
 }
 
 type Stmt interface {
@@ -47,6 +49,19 @@ func (expr *Expression) Accept(v StmtVisitor) interface{} {
 	return v.VisitExpressionStmt(expr)
 }
 
+type If struct {
+	Condition  Expr
+	ThenBranch Stmt
+	ElseBranch Stmt
+}
+
+func NewIf(condition Expr, thenbranch Stmt, elsebranch Stmt) Stmt {
+	return &If{Condition: condition, ThenBranch: thenbranch, ElseBranch: elsebranch}
+}
+func (expr *If) Accept(v StmtVisitor) interface{} {
+	return v.VisitIfStmt(expr)
+}
+
 type Print struct {
 	Expression Expr
 }
@@ -59,13 +74,25 @@ func (expr *Print) Accept(v StmtVisitor) interface{} {
 }
 
 type Var struct {
-	name *Token
-	expr Expr
+	Name        *Token
+	Initializer Expr
 }
 
-func NewVar(name *Token, expr Expr) Stmt {
-	return &Var{name: name, expr: expr}
+func NewVar(name *Token, initializer Expr) Stmt {
+	return &Var{Name: name, Initializer: initializer}
 }
 func (expr *Var) Accept(v StmtVisitor) interface{} {
 	return v.VisitVarStmt(expr)
+}
+
+type While struct {
+	Condition Expr
+	Body      Stmt
+}
+
+func NewWhile(condition Expr, body Stmt) Stmt {
+	return &While{Condition: condition, Body: body}
+}
+func (expr *While) Accept(v StmtVisitor) interface{} {
+	return v.VisitWhileStmt(expr)
 }

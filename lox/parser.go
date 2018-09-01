@@ -104,6 +104,9 @@ func (p *Parser) synchronize() {
 // block			-> "{" declaration* "}" ;
 // printStmt		-> "print" expression ;
 // expreStmt		-> expression ;
+// forStmt			-> "for" "(" ( varDeclaration | expreStmt | ";" ) expression? ";" expression? ")" statement ;
+// IfStmt			-> "if" "(" expression ")" statement ( "else" statement  )? ;
+// WhileStmt		-> "while" "(" expression ")" statement
 // expression		-> assignment ;
 // asignment		-> identifier "=" expression | logical_or ;
 // logical_or		-> logical_and ( "or" logical_and )* ;
@@ -198,10 +201,16 @@ func (p *Parser) varDeclaration() Stmt {
 
 func (p *Parser) statement() Stmt {
 	switch {
+	case p.match(TokenFor):
+		return p.forStmt()
+	case p.match(TokenIf):
+		return p.ifStmt()
 	case p.match(TokenPrint):
 		return p.printStmt()
 	case p.match(TokenLeftBrace):
 		return NewBlock(p.block())
+	case p.match(TokenWhile):
+		return p.whileStmt()
 	default:
 		return p.expressionStmt()
 	}
@@ -218,6 +227,98 @@ func (p *Parser) block() []Stmt {
 	return stmts
 }
 
+/*
+ for statement is a syntax sugar for while statement.
+
+ 		for (var i = 0; i < 10; i = i + 1) {
+ 				print i;
+ 		}
+
+ will be translated into
+
+		{
+			var i = 0;
+			while (i < 10) {
+				print i;
+				i = i + 1
+			}
+		}
+*/
+func (p *Parser) forStmt() Stmt {
+	var (
+		forBlock    Stmt
+		initializer Stmt
+		condition   Expr
+		increment   Expr
+		body        Stmt
+		forBody     []Stmt
+	)
+
+	p.consume(TokenLeftParen, "expect '(' after 'for'.")
+	if p.match(TokenVar) {
+		initializer = p.varDeclaration()
+	} else if p.match(TokenSemi) {
+		initializer = nil
+	} else {
+		initializer = p.expressionStmt()
+	}
+
+	if p.check(TokenSemi) {
+		condition = NewLiteral(true)
+	} else {
+		condition = p.expression()
+	}
+
+	p.consume(TokenSemi, "expect ';' after 'for' initializer.")
+	if p.check(TokenRightParen) {
+		increment = nil
+	} else {
+		increment = p.expression()
+	}
+	p.match(TokenRightParen)
+
+	body = p.statement()
+	// If it is a block, we strip it first.
+	if stmts, ok := body.(*Block); ok {
+		forBody = stmts.Stmts
+	} else {
+		forBody = make([]Stmt, 2)
+		forBody = append(forBody, body)
+	}
+
+	if increment != nil {
+		forBody = append(forBody, NewExpression(increment))
+	}
+
+	innerWhile := NewWhile(condition, NewBlock(forBody))
+	if initializer != nil {
+		forBlock = NewBlock([]Stmt{initializer, innerWhile})
+	} else {
+		forBlock = NewBlock([]Stmt{innerWhile})
+	}
+	return forBlock
+}
+
+func (p *Parser) ifStmt() Stmt {
+	var (
+		condition  Expr
+		thenBranch Stmt
+		elseBranch Stmt
+	)
+
+	p.consume(TokenLeftParen, "expect '(' after 'if'.")
+	condition = p.expression()
+	p.consume(TokenRightParen, "expect ')' after if condition.")
+
+	thenBranch = p.statement()
+	if p.check(TokenElse) {
+		p.advance()
+		elseBranch = p.statement()
+	}
+
+	return NewIf(condition, thenBranch, elseBranch)
+}
+
 func (p *Parser) printStmt() Stmt {
 	expr := p.expression()
 	p.consume(TokenSemi, "expect ';' after print expression.")
@@ -229,6 +330,20 @@ func (p *Parser) expressionStmt() Stmt {
 
 	p.consume(TokenSemi, "expect ';' after expression.")
 	return NewExpression(expr)
+}
+
+func (p *Parser) whileStmt() Stmt {
+	var (
+		condition Expr
+		body      Stmt
+	)
+
+	p.consume(TokenLeftParen, "expect '(' after 'while'.")
+	condition = p.expression()
+	p.consume(TokenRightParen, "expect ')' after while condition.")
+
+	body = p.statement()
+	return NewWhile(condition, body)
 }
 
 func (p *Parser) expression() Expr {
@@ -244,7 +359,7 @@ func (p *Parser) assignment() Expr {
 		value := p.assignment()
 
 		if varExpr, ok := expr.(*Variable); ok {
-			name := varExpr.name
+			name := varExpr.Name
 			return NewAssign(name, value)
 		}
 

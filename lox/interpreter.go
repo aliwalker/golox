@@ -71,6 +71,15 @@ func (i *Interpreter) VisitFunctionStmt(stmt *Function) interface{} {
 	return nil
 }
 
+func (i *Interpreter) VisitIfStmt(stmt *If) interface{} {
+	if truthy(i.evaluate(stmt.Condition)) {
+		i.execute(stmt.ThenBranch)
+	} else {
+		i.execute(stmt.ElseBranch)
+	}
+	return nil
+}
+
 func (i *Interpreter) VisitPrintStmt(stmt *Print) interface{} {
 	val := i.evaluate(stmt.Expression)
 	fmt.Println(val)
@@ -85,12 +94,20 @@ func (i *Interpreter) VisitVarStmt(stmt *Var) interface{} {
 		initVal     interface{}
 	)
 
-	identifier = stmt.name
-	if initializer = stmt.expr; initializer != nil {
+	identifier = stmt.Name
+	if initializer = stmt.Initializer; initializer != nil {
 		initVal = i.evaluate(initializer)
 	}
 
 	i.environment.Define(identifier.Lexeme, initVal)
+	return nil
+}
+
+func (i *Interpreter) VisitWhileStmt(stmt *While) interface{} {
+	for truthy(i.evaluate(stmt.Condition)) {
+		i.execute(stmt.Body)
+	}
+
 	return nil
 }
 
@@ -227,7 +244,7 @@ func (i *Interpreter) VisitUnaryExpr(expr *Unary) interface{} {
 }
 
 func (i *Interpreter) VisitVariableExpr(expr *Variable) interface{} {
-	val := lookUpVariable(i.environment, expr.name)
+	val := lookUpVariable(i.environment, expr.Name)
 	return val
 }
 

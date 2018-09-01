@@ -101,11 +101,11 @@ func (expr *Unary) Accept(v ExprVisitor) interface{} {
 }
 
 type Variable struct {
-	name *Token
+	Name *Token
 }
 
 func NewVariable(name *Token) Expr {
-	return &Variable{name: name}
+	return &Variable{Name: name}
 }
 func (expr *Variable) Accept(v ExprVisitor) interface{} {
 	return v.VisitVariableExpr(expr)

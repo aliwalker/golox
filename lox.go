@@ -12,7 +12,7 @@ import (
 var interpreter = lox.NewInterpreter()
 
 func main() {
-	run("fun foo(a1, a2) { print a1 + a2; } foo(1, 2);")
+
 }
 
 func run(source string) (hadError, hadRuntimeError bool) {

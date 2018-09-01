@@ -70,6 +70,12 @@ func TestFuncStmt(t *testing.T) {
 	runStmt(t, "fun foo() { print \"bar\"; }")
 	runStmt(t, "fun bar(foobar) { print foobar;  }")
 	runStmt(t, "fun foo() { print \"bar\"; } \nfoo();")
+	runStmt(t, "fun foo() { fun bar() { print \"ok\"; } bar(); }")
+}
+func TestIfStmt(t *testing.T) {
+	runStmt(t, "if (true) print \"true\";")
+	runStmt(t, "var a = 5; var b = 4; if (a > b) print a; else print b;")
+	runStmt(t, "if (5 > 4) { print \"a\"; print \"b\"; }")
 }
 func TestPrintStmt(t *testing.T) {
 	runStmt(t, "print \"hello\";")
@@ -77,6 +83,10 @@ func TestPrintStmt(t *testing.T) {
 func TestVarStmt(t *testing.T) {
 	runStmt(t, "var a = 1;")
 	runStmt(t, "var a = 1; a;")
+}
+func TestWhileStmt(t *testing.T) {
+	runStmt(t, "var i = 0;\nwhile (i < 3) { \nprint i; \ni = i + 1; \n}")
+	runStmt(t, "var i = 0; while (i < 3) i = i + 1;")
 }
 func TestLiteralExpr(t *testing.T) {
 	runExpr(t, "\"a test string.\"", "a test string.")
@@ -131,9 +141,9 @@ func TestRuntimeError(t *testing.T) {
 	runErrStmt(t, "fun foo() { print foo }")
 	runErrStmt(t, "fun foo(1) { print foo; }")
 	runErrStmt(t, "fun foo(a1, a2, a3, a4, a5, a6, a7, a8, a9){}")
-	runErrStmt(t, "fun foo() { print foo; } foo();")
 	runErrStmt(t, "\"notAFun\"();")
 	runErrStmt(t, "45();")
 	runErrStmt(t, "foo();")
 	runErrStmt(t, "fun foo(a1, a2) { print a1 + a2; } foo(1, 2, 3)")
+	runErrStmt(t, "else print 5;")
 }
