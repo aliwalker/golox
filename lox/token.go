@@ -25,6 +25,13 @@ const (
 	TokenSlash
 	TokenStar
 
+	// assignment operator.
+	TokenPlusEqual
+	TokenMinusEqual
+	TokenStarEqual
+	TokenSlashEqual
+	TokenPercentEqual
+
 	// one or two
 	TokenBang
 	TokenBangEqual

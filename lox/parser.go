@@ -108,7 +108,7 @@ func (p *Parser) synchronize() {
 // IfStmt			-> "if" "(" expression ")" statement ( "else" statement  )? ;
 // WhileStmt		-> "while" "(" expression ")" statement
 // expression		-> assignment ;
-// asignment		-> identifier "=" expression | logical_or ;
+// asignment		-> identifier ( "=" | "+=" | "-=" | "*=" | "/=" ) expression | logical_or ;
 // logical_or		-> logical_and ( "or" logical_and )* ;
 // logical_and		-> equality ( "and" equality )* ;
 // equality			-> comparison ( ( "==" | "!=" ) comparison )* ;
@@ -354,17 +354,17 @@ func (p *Parser) assignment() Expr {
 	expr := p.or()
 
 	// call assignment recursively because it's right associative.
-	if p.match(TokenEqual) {
-		equals := p.previous()
+	if p.match(TokenEqual, TokenPlusEqual, TokenMinusEqual, TokenStarEqual, TokenSlashEqual) {
+		operator := p.previous()
 		value := p.assignment()
 
 		if varExpr, ok := expr.(*Variable); ok {
 			name := varExpr.Name
-			return NewAssign(name, value)
+			return NewAssign(name, operator, value)
 		}
 
 		errmsg := "invalid assign target."
-		panic(NewParsingError(equals, errmsg))
+		panic(NewParsingError(operator, errmsg))
 	}
 	// let's skip it until we define variable.
 	return expr

@@ -82,15 +82,16 @@ func (s *Scanner) scanToken() {
 		s.addToken(TokenComma, nil)
 	case ';':
 		s.addToken(TokenSemi, nil)
-	case '-':
-		s.addToken(TokenMinus, nil)
-	case '+':
-		s.addToken(TokenPlus, nil)
-	case '*':
-		s.addToken(TokenStar, nil)
-	case '%':
-		s.addToken(TokenPercent, nil)
 
+	// one or two chars.
+	case '-':
+		s.addIfMatch('=', TokenMinusEqual, TokenMinus)
+	case '+':
+		s.addIfMatch('=', TokenPlusEqual, TokenPlus)
+	case '*':
+		s.addIfMatch('=', TokenStarEqual, TokenStar)
+	case '%':
+		s.addIfMatch('=', TokenPercentEqual, TokenPercent)
 	case '!':
 		s.addIfMatch('=', TokenBangEqual, TokenBang)
 	case '=':
@@ -106,7 +107,7 @@ func (s *Scanner) scanToken() {
 				s.advance()
 			}
 		} else {
-			s.addToken(TokenSlash, nil)
+			s.addIfMatch('=', TokenSlashEqual, TokenSlash)
 		}
 
 	// ignore white spaces.

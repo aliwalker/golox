@@ -64,6 +64,7 @@ func TestRunStmt(t *testing.T) {
 	runStmt(t, "123;")
 	runStmt(t, "var a; a = 2;") // test var & assign stmts.
 	runStmt(t, "{ var a = 1; print a; }")
+	runStmt(t, "for (var i = 0; i < 3; i = i + 1) { print i; }")
 }
 
 func TestFuncStmt(t *testing.T) {
@@ -126,6 +127,12 @@ func TestLogicalExpr(t *testing.T) {
 	runExpr(t, "true and false", false)
 	runExpr(t, "false and true", false)
 	runExpr(t, "nil or 1", 1)
+}
+
+func TestAssignExpr(t *testing.T) {
+	runStmt(t, "var a = 1;\na += 2; \nprint a;")
+	runStmt(t, "var a = \"head\"; a += \" tail\"; print a;")
+	runStmt(t, "var b = 1; b -= 1; print b;")
 }
 
 func TestRuntimeError(t *testing.T) {

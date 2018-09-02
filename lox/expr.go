@@ -16,12 +16,13 @@ type Expr interface {
 }
 
 type Assign struct {
-	Name  *Token
-	Value Expr
+	Name     *Token
+	Operator *Token
+	Value    Expr
 }
 
-func NewAssign(name *Token, value Expr) Expr {
-	return &Assign{Name: name, Value: value}
+func NewAssign(name *Token, operator *Token, value Expr) Expr {
+	return &Assign{Name: name, Operator: operator, Value: value}
 }
 func (expr *Assign) Accept(v ExprVisitor) interface{} {
 	return v.VisitAssignExpr(expr)

@@ -112,7 +112,31 @@ func (i *Interpreter) VisitWhileStmt(stmt *While) interface{} {
 }
 
 func (i *Interpreter) VisitAssignExpr(expr *Assign) interface{} {
+	var operator TokenType
+
 	value := i.evaluate(expr.Value)
+	switch expr.Operator.Type {
+	case TokenPlusEqual:
+		operator = TokenPlus
+	case TokenMinusEqual:
+		operator = TokenMinus
+	case TokenStarEqual:
+		operator = TokenStar
+	case TokenSlashEqual:
+		operator = TokenSlash
+	case TokenPercentEqual:
+		operator = TokenPercent
+	default:
+		operator = 0
+	}
+
+	if operator != 0 {
+		lval := NewLiteral(lookUpVariable(i.environment, expr.Name))
+		rval := NewLiteral(value)
+
+		binary, _ := NewBinary(lval, NewToken(operator, "", nil, expr.Operator.Line), rval).(*Binary)
+		value = i.VisitBinaryExpr(binary)
+	}
 	i.environment.Assign(expr.Name, value)
 	return value
 }
