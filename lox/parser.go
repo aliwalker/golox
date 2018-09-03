@@ -100,7 +100,7 @@ func (p *Parser) synchronize() {
 // function			-> IDENTIFIER "(" parameters? ")" block ;
 // parameters		-> IDENTIFIER ( "," IDENTIFIER )* ;
 // varDeclaration	-> "var" IDENTIFIER ( "=" expression )? ";" ;
-// statement		-> block | expreStmt | printStmt ;
+// statement		-> block | expreStmt | printStmt | "break" ;
 // block			-> "{" declaration* "}" ;
 // printStmt		-> "print" expression ;
 // expreStmt		-> expression ;
@@ -201,6 +201,9 @@ func (p *Parser) varDeclaration() Stmt {
 
 func (p *Parser) statement() Stmt {
 	switch {
+	case p.match(TokenBreak):
+		p.consume(TokenSemi, "expect ';' after 'break'.")
+		return NewControl(ControlBreak, nil)
 	case p.match(TokenFor):
 		return p.forStmt()
 	case p.match(TokenIf):

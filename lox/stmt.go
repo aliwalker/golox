@@ -2,6 +2,7 @@ package lox
 
 type StmtVisitor interface {
 	VisitBlockStmt(stmt *Block) interface{}
+	VisitControlStmt(stmt *Control) interface{}
 	VisitFunctionStmt(stmt *Function) interface{}
 	VisitExpressionStmt(stmt *Expression) interface{}
 	VisitIfStmt(stmt *If) interface{}
@@ -23,6 +24,18 @@ func NewBlock(stmts []Stmt) Stmt {
 }
 func (expr *Block) Accept(v StmtVisitor) interface{} {
 	return v.VisitBlockStmt(expr)
+}
+
+type Control struct {
+	CtrlType ControlType
+	Value    Expr
+}
+
+func NewControl(ctrltype ControlType, value Expr) Stmt {
+	return &Control{CtrlType: ctrltype, Value: value}
+}
+func (expr *Control) Accept(v StmtVisitor) interface{} {
+	return v.VisitControlStmt(expr)
 }
 
 type Function struct {

@@ -67,6 +67,10 @@ func TestRunStmt(t *testing.T) {
 	runStmt(t, "for (var i = 0; i < 3; i = i + 1) { print i; }")
 }
 
+func TestBreakStmt(t *testing.T) {
+	runStmt(t, "var a = 0;\n while (true) {\n print a; a += 1; \nif (a == 3) \nbreak; \n}")
+}
+
 func TestFuncStmt(t *testing.T) {
 	runStmt(t, "fun foo() { print \"bar\"; }")
 	runStmt(t, "fun bar(foobar) { print foobar;  }")

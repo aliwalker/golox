@@ -60,6 +60,11 @@ func (i *Interpreter) VisitBlockStmt(stmt *Block) interface{} {
 	return nil
 }
 
+func (i *Interpreter) VisitControlStmt(stmt *Control) interface{} {
+	// throw it to unwind the call stack.
+	panic(stmt)
+}
+
 func (i *Interpreter) VisitExpressionStmt(stmt *Expression) interface{} {
 	i.evaluate(stmt.Expression)
 	return nil
@@ -74,7 +79,7 @@ func (i *Interpreter) VisitFunctionStmt(stmt *Function) interface{} {
 func (i *Interpreter) VisitIfStmt(stmt *If) interface{} {
 	if truthy(i.evaluate(stmt.Condition)) {
 		i.execute(stmt.ThenBranch)
-	} else {
+	} else if stmt.ElseBranch != nil {
 		i.execute(stmt.ElseBranch)
 	}
 	return nil
@@ -104,6 +109,20 @@ func (i *Interpreter) VisitVarStmt(stmt *Var) interface{} {
 }
 
 func (i *Interpreter) VisitWhileStmt(stmt *While) interface{} {
+	defer func() {
+		if val := recover(); val != nil {
+			control, ok := val.(*Control)
+			// repanic if it is not a Control.
+			if ok != true {
+				panic(val)
+			}
+			// repanic if it is a ControlReturn
+			if control.CtrlType != ControlBreak {
+				panic(val)
+			}
+		}
+	}()
+
 	for truthy(i.evaluate(stmt.Condition)) {
 		i.execute(stmt.Body)
 	}
@@ -293,15 +312,12 @@ func convertFloatOperands(operator *Token, left, right interface{}) (float64, fl
 	return lval, rval, isInt1 && isInt2
 }
 
+// TODO: this might be problematic.
 func equal(left, right interface{}) bool {
-	switch lval := left.(type) {
-	case string, float64, int:
-		rval, ok := right.(float64)
-		if ok != true || lval != rval {
-			return false
-		}
+	if left == right {
 		return true
 	}
+
 	return false
 }
 

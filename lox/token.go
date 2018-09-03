@@ -49,6 +49,7 @@ const (
 
 	// keywords
 	TokenAnd
+	TokenBreak
 	TokenClass
 	TokenFalse
 	TokenElse
