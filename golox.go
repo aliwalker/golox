@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/aliwalker/golox/lox"
 )
@@ -12,7 +13,18 @@ import (
 var interpreter = lox.NewInterpreter()
 
 func main() {
-
+	if len(os.Args) > 2 {
+		fmt.Println("Usage: lox [script]")
+	} else if len(os.Args) == 2 {
+		sourcePath, err := filepath.Abs(os.Args[1])
+		if err != nil {
+			fmt.Println("Unable to find path ")
+			os.Exit(-1)
+		}
+		RunFile(sourcePath)
+	} else {
+		RunPrompt()
+	}
 }
 
 func run(source string) (hadError, hadRuntimeError bool) {
@@ -37,7 +49,8 @@ func RunFile(path string) {
 	)
 
 	if dat, err = ioutil.ReadFile(path); err != nil {
-		panic(fmt.Sprintf("Unable to read from file: %v.\n %v", path, err))
+		fmt.Printf("Unable to read from file: %v.\n %v", path, err.Error())
+		os.Exit(1)
 	}
 	source = string(dat)
 	hadError, hadRuntimeError := run(source)

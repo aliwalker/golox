@@ -1,0 +1,5 @@
+fun hello(name) {
+    print "Hi " + name + "!";
+}
+
+hello("Jimmy");
