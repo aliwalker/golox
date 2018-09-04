@@ -33,7 +33,7 @@ func main() {
 
 	defineAst(out, "Stmt", []string{
 		"Block		: Stmts []Stmt",
-		"Control	: CtrlType ControlType, Value Expr",
+		"Control	: Keyword *Token, CtrlType ControlType, Value Expr",
 		"Function	: Name *Token, Params []*Token, Body []Stmt",
 		"Expression	: Expression Expr",
 		"If			: Condition Expr, ThenBranch Stmt, ElseBranch Stmt",

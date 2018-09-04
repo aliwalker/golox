@@ -32,11 +32,19 @@ func runStmt(t *testing.T, src string) {
 	scanner := NewScanner(src)
 	parser := NewParser(scanner.ScanTokens())
 	stmts, _ := parser.Parse()
-	interpreter := NewInterpreter()
 
 	if parser.hadError == true {
 		t.Error("syntax error.")
 	}
+
+	interpreter := NewInterpreter()
+	resolver := NewResolver(interpreter)
+	resolver.Resolve(stmts)
+
+	if resolver.hadError == true {
+		t.Error("resolve error.")
+	}
+
 	interpreter.Interprete(stmts)
 
 	if interpreter.hadRuntimeError != false {
@@ -44,7 +52,7 @@ func runStmt(t *testing.T, src string) {
 	}
 }
 
-func runErrStmt(t *testing.T, src string) {
+func runSynErrStmt(t *testing.T, src string) {
 	scanner := NewScanner(src)
 	parser := NewParser(scanner.ScanTokens())
 	stmts, hadError := parser.Parse()
@@ -58,6 +66,26 @@ func runErrStmt(t *testing.T, src string) {
 	if interpreter.hadRuntimeError != true {
 		t.Error("expect runtime error.")
 	}
+}
+
+func runResErrStmt(t *testing.T, src string) {
+	scanner := NewScanner(src)
+	parser := NewParser(scanner.ScanTokens())
+	stmts, _ := parser.Parse()
+
+	interpreter := NewInterpreter()
+	resolver := NewResolver(interpreter)
+
+	resolver.Resolve(stmts)
+	if resolver.hadError != true {
+		t.Error("expect resolving error.")
+	}
+}
+
+func TestResError(t *testing.T) {
+	runResErrStmt(t, "var a; break;")
+	runResErrStmt(t, "return a;")
+	runResErrStmt(t, "{var a = a + 1;}")
 }
 
 func TestRunStmt(t *testing.T) {
@@ -76,6 +104,7 @@ func TestFuncStmt(t *testing.T) {
 	runStmt(t, "fun bar(foobar) { print foobar;  }")
 	runStmt(t, "fun foo() { print \"bar\"; } \nfoo();")
 	runStmt(t, "fun foo() { fun bar() { print \"ok\"; } bar(); }")
+	runStmt(t, "fun foo() { return 5; } print foo();")
 }
 func TestIfStmt(t *testing.T) {
 	runStmt(t, "if (true) print \"true\";")
@@ -140,21 +169,21 @@ func TestAssignExpr(t *testing.T) {
 }
 
 func TestRuntimeError(t *testing.T) {
-	runErrStmt(t, "true - true;")
-	runErrStmt(t, "1 + \"a string\";")
-	runErrStmt(t, "-\"a string\";")
-	runErrStmt(t, "5.0 % 2;")
-	runErrStmt(t, "\"a string\" % \"another string\";")
-	runErrStmt(t, "a;")     // due to variable `a`` is not defined.
-	runErrStmt(t, "a = 1;") // due to variable `a` is not defined.
-	runErrStmt(t, "var 1err = 123; 123;")
-	runErrStmt(t, "var a = 1; {\n\tvar b = 2;\n}\n\tprint b;")
-	runErrStmt(t, "fun foo() { print foo }")
-	runErrStmt(t, "fun foo(1) { print foo; }")
-	runErrStmt(t, "fun foo(a1, a2, a3, a4, a5, a6, a7, a8, a9){}")
-	runErrStmt(t, "\"notAFun\"();")
-	runErrStmt(t, "45();")
-	runErrStmt(t, "foo();")
-	runErrStmt(t, "fun foo(a1, a2) { print a1 + a2; } foo(1, 2, 3)")
-	runErrStmt(t, "else print 5;")
+	runSynErrStmt(t, "true - true;")
+	runSynErrStmt(t, "1 + \"a string\";")
+	runSynErrStmt(t, "-\"a string\";")
+	runSynErrStmt(t, "5.0 % 2;")
+	runSynErrStmt(t, "\"a string\" % \"another string\";")
+	runSynErrStmt(t, "a;")     // due to variable `a`` is not defined.
+	runSynErrStmt(t, "a = 1;") // due to variable `a` is not defined.
+	runSynErrStmt(t, "var 1err = 123; 123;")
+	runSynErrStmt(t, "var a = 1; {\n\tvar b = 2;\n}\n\tprint b;")
+	runSynErrStmt(t, "fun foo() { print foo }")
+	runSynErrStmt(t, "fun foo(1) { print foo; }")
+	runSynErrStmt(t, "fun foo(a1, a2, a3, a4, a5, a6, a7, a8, a9){}")
+	runSynErrStmt(t, "\"notAFun\"();")
+	runSynErrStmt(t, "45();")
+	runSynErrStmt(t, "foo();")
+	runSynErrStmt(t, "fun foo(a1, a2) { print a1 + a2; } foo(1, 2, 3)")
+	runSynErrStmt(t, "else print 5;")
 }

@@ -8,13 +8,14 @@ type Interpreter struct {
 	hadRuntimeError bool
 	environment     *Environment
 	global          *Environment
+	locals          map[Expr]int // with key = an Expr containing variable, value = distance from the current environment.
 }
 
 func NewInterpreter() *Interpreter {
 	global := NewEnvironment(nil)
 	environment := global
 
-	return &Interpreter{false, global, environment}
+	return &Interpreter{false, global, environment, map[Expr]int{}}
 }
 
 func (i *Interpreter) Interprete(stmts []Stmt) (hadRuntimeError bool) {
@@ -53,6 +54,10 @@ func (i *Interpreter) executeBlock(stmts []Stmt, env *Environment) {
 	for _, stmt := range stmts {
 		i.execute(stmt)
 	}
+}
+
+func (i *Interpreter) resolve(expr Expr, distance int) {
+	i.locals[expr] = distance
 }
 
 func (i *Interpreter) VisitBlockStmt(stmt *Block) interface{} {

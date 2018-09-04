@@ -15,19 +15,19 @@ func (err *LexingError) Error() string {
 	return fmt.Sprintf("[line %v] Error: %v\n", err.line, err.message)
 }
 
-// ParsingError occurs when there's syntax error.
-type ParsingError struct {
+// LoxError occurs when there's syntax error.
+type LoxError struct {
 	token   *Token
 	message string
 }
 
-// NewParsingError returns a parsing error.
-func NewParsingError(token *Token, message string) error {
-	return &ParsingError{token, message}
+// NewLoxError returns a parsing error.
+func NewLoxError(token *Token, message string) error {
+	return &LoxError{token, message}
 }
 
 // Error implements the built-in error interface.
-func (err *ParsingError) Error() string {
+func (err *LoxError) Error() string {
 	line := err.token.Line
 	where := err.token.Lexeme
 	message := err.message

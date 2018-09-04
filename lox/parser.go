@@ -39,7 +39,7 @@ func (p *Parser) consume(t TokenType, message string) *Token {
 	if p.check(t) {
 		return p.advance()
 	}
-	panic(NewParsingError(p.peek(), message))
+	panic(NewLoxError(p.peek(), message))
 }
 
 func (p *Parser) end() bool {
@@ -100,12 +100,13 @@ func (p *Parser) synchronize() {
 // function			-> IDENTIFIER "(" parameters? ")" block ;
 // parameters		-> IDENTIFIER ( "," IDENTIFIER )* ;
 // varDeclaration	-> "var" IDENTIFIER ( "=" expression )? ";" ;
-// statement		-> block | expreStmt | printStmt | "break" ;
+// statement		-> block | expreStmt | printStmt | "break" | returnStmt ;
 // block			-> "{" declaration* "}" ;
 // printStmt		-> "print" expression ;
 // expreStmt		-> expression ;
 // forStmt			-> "for" "(" ( varDeclaration | expreStmt | ";" ) expression? ";" expression? ")" statement ;
 // IfStmt			-> "if" "(" expression ")" statement ( "else" statement  )? ;
+// returnStmt		-> "return" expression? ";" ;
 // WhileStmt		-> "while" "(" expression ")" statement
 // expression		-> assignment ;
 // asignment		-> identifier ( "=" | "+=" | "-=" | "*=" | "/=" ) expression | logical_or ;
@@ -133,7 +134,7 @@ func (p *Parser) declaration() Stmt {
 	defer func() {
 		if val := recover(); val != nil {
 			// might trigger another panic if it is not a Parsing Error.
-			parsingError := val.(*ParsingError)
+			parsingError := val.(*LoxError)
 			fmt.Println(parsingError.Error())
 
 			p.hadError = true
@@ -169,7 +170,7 @@ func (p *Parser) function(kind string) Stmt {
 			params = append(params, param)
 
 			if len(params) > 8 {
-				panic(NewParsingError(p.peek(), "cannot have more than 8 parameters."))
+				panic(NewLoxError(p.peek(), "cannot have more than 8 parameters."))
 			}
 			if !p.match(TokenComma) {
 				break
@@ -202,14 +203,24 @@ func (p *Parser) varDeclaration() Stmt {
 func (p *Parser) statement() Stmt {
 	switch {
 	case p.match(TokenBreak):
+		keyword := p.previous()
 		p.consume(TokenSemi, "expect ';' after 'break'.")
-		return NewControl(ControlBreak, nil)
+		return NewControl(keyword, ControlBreak, nil)
 	case p.match(TokenFor):
 		return p.forStmt()
 	case p.match(TokenIf):
 		return p.ifStmt()
 	case p.match(TokenPrint):
 		return p.printStmt()
+	case p.match(TokenReturn):
+		var value Expr
+
+		keyword := p.previous()
+		if !p.check(TokenSemi) {
+			value = p.expression()
+		}
+		p.consume(TokenSemi, "expect ';' after return value.")
+		return NewControl(keyword, ControlReturn, value)
 	case p.match(TokenLeftBrace):
 		return NewBlock(p.block())
 	case p.match(TokenWhile):
@@ -367,7 +378,7 @@ func (p *Parser) assignment() Expr {
 		}
 
 		errmsg := "invalid assign target."
-		panic(NewParsingError(operator, errmsg))
+		panic(NewLoxError(operator, errmsg))
 	}
 	// let's skip it until we define variable.
 	return expr
@@ -502,6 +513,6 @@ func (p *Parser) primary() Expr {
 		p.consume(TokenRightParen, "expect ')' after expression.")
 		return NewGrouping(expr)
 	default:
-		panic(NewParsingError(p.peek(), "expect expression."))
+		panic(NewLoxError(p.peek(), "expect expression."))
 	}
 }

@@ -27,12 +27,13 @@ func (expr *Block) Accept(v StmtVisitor) interface{} {
 }
 
 type Control struct {
+	Keyword  *Token
 	CtrlType ControlType
 	Value    Expr
 }
 
-func NewControl(ctrltype ControlType, value Expr) Stmt {
-	return &Control{CtrlType: ctrltype, Value: value}
+func NewControl(keyword *Token, ctrltype ControlType, value Expr) Stmt {
+	return &Control{Keyword: keyword, CtrlType: ctrltype, Value: value}
 }
 func (expr *Control) Accept(v StmtVisitor) interface{} {
 	return v.VisitControlStmt(expr)
