@@ -52,6 +52,9 @@ func runStmt(t *testing.T, src string) {
 	}
 }
 
+// ==================================== specific error runner ===================================
+// These are runners for testing specific errors, `src` passed to them should be ensured to have
+// specific errors, therefore some error checking are stripped.
 func runSynErrStmt(t *testing.T, src string) {
 	scanner := NewScanner(src)
 	parser := NewParser(scanner.ScanTokens())
@@ -82,17 +85,66 @@ func runResErrStmt(t *testing.T, src string) {
 	}
 }
 
+func runRuntimeErrStmt(t *testing.T, src string) {
+	scanner := NewScanner(src)
+	parser := NewParser(scanner.ScanTokens())
+	stmts, _ := parser.Parse()
+
+	interpreter := NewInterpreter()
+	//resolver.Resolve(stmts)
+
+	//resolver.Resolve(stmts)
+	interpreter.Interprete(stmts)
+	if interpreter.hadRuntimeError != true {
+		t.Error("expect runtime error.")
+	}
+}
+
+// ================================= Error handler testing ================================
+func TestSynError(t *testing.T) {
+	runSynErrStmt(t, "true - true;")
+	runSynErrStmt(t, "1 + \"a string\";")
+	runSynErrStmt(t, "-\"a string\";")
+	runSynErrStmt(t, "5.0 % 2;")
+	runSynErrStmt(t, "\"a string\" % \"another string\";")
+	runSynErrStmt(t, "a;")     // variable `a`` is not defined.
+	runSynErrStmt(t, "a = 1;") // variable `a` is not defined.
+	runSynErrStmt(t, "var 1err = 123; 123;")
+	runSynErrStmt(t, "var a = 1; {\n\tvar b = 2;\n}\n\tprint b;")
+	runSynErrStmt(t, "fun foo() { print foo }")
+	runSynErrStmt(t, "fun foo(1) { print foo; }")
+	runSynErrStmt(t, "fun foo(a1, a2, a3, a4, a5, a6, a7, a8, a9){}")
+	runSynErrStmt(t, "\"notAFun\"();")
+	runSynErrStmt(t, "45();")
+	runSynErrStmt(t, "foo();")
+	runSynErrStmt(t, "fun foo(a1, a2) { print a1 + a2; } foo(1, 2, 3)")
+	runSynErrStmt(t, "else print 5;")
+}
+func TestRuntimeErrStmt(t *testing.T) {
+	runRuntimeErrStmt(t, "var a, b = 1; a + b;")                                      // uninitialized variable a.
+	runRuntimeErrStmt(t, "a + b;")                                                    // undefined variable a and b.
+	runRuntimeErrStmt(t, "5.0 % 2;")                                                  // modulo arithmetic on floating point numbers.
+	runRuntimeErrStmt(t, "2();")                                                      // call a non callable.
+	runRuntimeErrStmt(t, "fun increment(arg1) { return arg1 + 1; } increment(1, 2);") // unmatched args and params.
+}
+
 func TestResError(t *testing.T) {
 	runResErrStmt(t, "var a; break;")
 	runResErrStmt(t, "return a;")
 	runResErrStmt(t, "{var a = a + 1;}")
 }
 
+// ========================================================================================
 func TestRunStmt(t *testing.T) {
 	runStmt(t, "123;")
 	runStmt(t, "var a; a = 2;") // test var & assign stmts.
 	runStmt(t, "{ var a = 1; print a; }")
 	runStmt(t, "for (var i = 0; i < 3; i = i + 1) { print i; }")
+}
+
+func TestVarListStmt(t *testing.T) {
+	runStmt(t, "var a = 1, b = 1; print a + b;")
+	runStmt(t, "var a, b, c; a = 1; b = 2; c = 3;")
 }
 
 func TestBreakStmt(t *testing.T) {
@@ -166,24 +218,4 @@ func TestAssignExpr(t *testing.T) {
 	runStmt(t, "var a = 1;\na += 2; \nprint a;")
 	runStmt(t, "var a = \"head\"; a += \" tail\"; print a;")
 	runStmt(t, "var b = 1; b -= 1; print b;")
-}
-
-func TestRuntimeError(t *testing.T) {
-	runSynErrStmt(t, "true - true;")
-	runSynErrStmt(t, "1 + \"a string\";")
-	runSynErrStmt(t, "-\"a string\";")
-	runSynErrStmt(t, "5.0 % 2;")
-	runSynErrStmt(t, "\"a string\" % \"another string\";")
-	runSynErrStmt(t, "a;")     // due to variable `a`` is not defined.
-	runSynErrStmt(t, "a = 1;") // due to variable `a` is not defined.
-	runSynErrStmt(t, "var 1err = 123; 123;")
-	runSynErrStmt(t, "var a = 1; {\n\tvar b = 2;\n}\n\tprint b;")
-	runSynErrStmt(t, "fun foo() { print foo }")
-	runSynErrStmt(t, "fun foo(1) { print foo; }")
-	runSynErrStmt(t, "fun foo(a1, a2, a3, a4, a5, a6, a7, a8, a9){}")
-	runSynErrStmt(t, "\"notAFun\"();")
-	runSynErrStmt(t, "45();")
-	runSynErrStmt(t, "foo();")
-	runSynErrStmt(t, "fun foo(a1, a2) { print a1 + a2; } foo(1, 2, 3)")
-	runSynErrStmt(t, "else print 5;")
 }

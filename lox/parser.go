@@ -99,7 +99,8 @@ func (p *Parser) synchronize() {
 // funDeclaration	-> "fun" function ;
 // function			-> IDENTIFIER "(" parameters? ")" block ;
 // parameters		-> IDENTIFIER ( "," IDENTIFIER )* ;
-// varDeclaration	-> "var" IDENTIFIER ( "=" expression )? ";" ;
+// varDeclaration	-> "var" nameDeclaration ;
+// nameDeclaration	-> IDENTIFIER ( "=" expression ) ( "," IDENTIFIER ( "=" expression )? )* ";"
 // statement		-> block | expreStmt | printStmt | "break" | returnStmt ;
 // block			-> "{" declaration* "}" ;
 // printStmt		-> "print" expression ;
@@ -186,6 +187,27 @@ func (p *Parser) function(kind string) Stmt {
 }
 
 func (p *Parser) varDeclaration() Stmt {
+	varDec := p.nameDeclaration()
+
+	if p.check(TokenSemi) {
+		p.advance()
+		return varDec
+	}
+
+	varDecs := make([]*Var, 0)
+	varDecs = append(varDecs, varDec)
+	for !p.check(TokenSemi) {
+		p.consume(TokenComma, "unexpected token.")
+		varDec = p.nameDeclaration()
+		varDecs = append(varDecs, varDec)
+	}
+	p.consume(TokenSemi, "expect ';' after variable declaration.")
+
+	return NewVarList(varDecs)
+}
+
+// a helper function for dealing with multi-var declarations.
+func (p *Parser) nameDeclaration() *Var {
 	var (
 		name        *Token
 		initializer Expr
@@ -196,8 +218,9 @@ func (p *Parser) varDeclaration() Stmt {
 		initializer = p.expression()
 	}
 
-	p.consume(TokenSemi, "expect ';' after variable declaration.")
-	return NewVar(name, initializer)
+	// We convert it eagerly because we know it's a *Var.
+	varDec, _ := NewVar(name, initializer).(*Var)
+	return varDec
 }
 
 func (p *Parser) statement() Stmt {

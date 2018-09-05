@@ -97,7 +97,6 @@ func (i *Interpreter) VisitPrintStmt(stmt *Print) interface{} {
 }
 
 func (i *Interpreter) VisitVarStmt(stmt *Var) interface{} {
-	// TODO: add scope variable.
 	var (
 		identifier  *Token
 		initializer Expr
@@ -110,6 +109,16 @@ func (i *Interpreter) VisitVarStmt(stmt *Var) interface{} {
 	}
 
 	i.environment.Define(identifier.Lexeme, initVal)
+	return nil
+}
+
+func (i *Interpreter) VisitVarListStmt(stmt *VarList) interface{} {
+	varDecs := stmt.stmts
+
+	for _, varDec := range varDecs {
+		i.execute(varDec)
+	}
+
 	return nil
 }
 
@@ -293,6 +302,9 @@ func (i *Interpreter) VisitUnaryExpr(expr *Unary) interface{} {
 
 func (i *Interpreter) VisitVariableExpr(expr *Variable) interface{} {
 	val := lookUpVariable(i.environment, expr.Name)
+	if val == nil {
+		panic(NewRuntimeError(expr.Name, "used variable before initializing it."))
+	}
 	return val
 }
 

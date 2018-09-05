@@ -243,6 +243,15 @@ func (r *Resolver) VisitVarStmt(stmt *Var) interface{} {
 	return nil
 }
 
+func (r *Resolver) VisitVarListStmt(stmt *VarList) interface{} {
+	varDecs := stmt.stmts
+
+	for _, varDec := range varDecs {
+		r.resolve(varDec)
+	}
+	return nil
+}
+
 func (r *Resolver) VisitWhileStmt(stmt *While) interface{} {
 	r.resolve(stmt.Condition)
 

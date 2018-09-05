@@ -3,4 +3,11 @@ generate_ast: tools/generate_ast.go
 	@echo "generating ast..."
 
 lox: generate_ast
+	@echo "building golox..."
 	@go build golox.go
+
+clean:
+	@rm golox
+
+test:
+	@go test -v github.com/aliwalker/golox/lox

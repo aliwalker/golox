@@ -8,6 +8,7 @@ type StmtVisitor interface {
 	VisitIfStmt(stmt *If) interface{}
 	VisitPrintStmt(stmt *Print) interface{}
 	VisitVarStmt(stmt *Var) interface{}
+	VisitVarListStmt(stmt *VarList) interface{}
 	VisitWhileStmt(stmt *While) interface{}
 }
 
@@ -97,6 +98,17 @@ func NewVar(name *Token, initializer Expr) Stmt {
 }
 func (expr *Var) Accept(v StmtVisitor) interface{} {
 	return v.VisitVarStmt(expr)
+}
+
+type VarList struct {
+	stmts []*Var
+}
+
+func NewVarList(stmts []*Var) Stmt {
+	return &VarList{stmts: stmts}
+}
+func (expr *VarList) Accept(v StmtVisitor) interface{} {
+	return v.VisitVarListStmt(expr)
 }
 
 type While struct {
