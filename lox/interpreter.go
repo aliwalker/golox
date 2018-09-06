@@ -164,13 +164,19 @@ func (i *Interpreter) VisitAssignExpr(expr *Assign) interface{} {
 	}
 
 	if operator != 0 {
-		lval := NewLiteral(lookUpVariable(i.environment, expr.Name))
+		lval := NewLiteral(i.lookUpVariable(expr, expr.Name))
 		rval := NewLiteral(value)
 
 		binary, _ := NewBinary(lval, NewToken(operator, "", nil, expr.Operator.Line), rval).(*Binary)
 		value = i.VisitBinaryExpr(binary)
 	}
-	i.environment.Assign(expr.Name, value)
+
+	distance, ok := i.locals[expr]
+	if ok {
+		i.environment.AssignAt(distance, expr.Name, value)
+	} else {
+		i.global.Assign(expr.Name, value)
+	}
 	return value
 }
 
@@ -301,10 +307,7 @@ func (i *Interpreter) VisitUnaryExpr(expr *Unary) interface{} {
 }
 
 func (i *Interpreter) VisitVariableExpr(expr *Variable) interface{} {
-	val := lookUpVariable(i.environment, expr.Name)
-	if val == nil {
-		panic(NewRuntimeError(expr.Name, "used variable before initializing it."))
-	}
+	val := i.lookUpVariable(expr, expr.Name)
 	return val
 }
 
@@ -338,9 +341,12 @@ func equal(left, right interface{}) bool {
 	return false
 }
 
-// TODO: add support to resolution pass.
-func lookUpVariable(env *Environment, name *Token) interface{} {
-	return env.Get(name)
+func (i *Interpreter) lookUpVariable(expr Expr, name *Token) interface{} {
+	distance, ok := i.locals[expr]
+	if ok {
+		return i.environment.GetAt(distance, name)
+	}
+	return i.global.Get(name)
 }
 
 func truthy(object interface{}) bool {

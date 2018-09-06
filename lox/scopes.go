@@ -6,10 +6,9 @@ package lox
 type varStatus int
 
 const (
-	_             varStatus = iota
-	varUndeclared           // variable is not declared.
-	varDeclared             // variable is declared but not available for reference.
-	varDefined              // variable is available for reference.
+	varUndeclared varStatus = iota // variable is not declared.
+	varDeclared                    // variable is declared but not available for reference.
+	varDefined                     // variable is available for reference.
 )
 
 // Scope is a map with key = name of a variable, indicates the status of the variable.

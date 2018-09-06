@@ -142,6 +142,10 @@ func TestRunStmt(t *testing.T) {
 	runStmt(t, "for (var i = 0; i < 3; i = i + 1) { print i; }")
 }
 
+func TestBinding(t *testing.T) {
+	runStmt(t, "var a = 0; { fun foo() { print a; } foo(); var a = 1; foo(); }")
+}
+
 func TestVarListStmt(t *testing.T) {
 	runStmt(t, "var a = 1, b = 1; print a + b;")
 	runStmt(t, "var a, b, c; a = 1; b = 2; c = 3;")
