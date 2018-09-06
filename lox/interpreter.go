@@ -92,8 +92,18 @@ func (i *Interpreter) VisitIfStmt(stmt *If) interface{} {
 
 func (i *Interpreter) VisitPrintStmt(stmt *Print) interface{} {
 	val := i.evaluate(stmt.Expression)
-	fmt.Println(val)
+	fmt.Println(stringify(val))
 	return nil
+}
+
+func stringify(value interface{}) interface{} {
+	switch v := value.(type) {
+	case int, float64, string:
+		return v
+	case printable:
+		return v.toString()
+	}
+	return value
 }
 
 func (i *Interpreter) VisitVarStmt(stmt *Var) interface{} {
