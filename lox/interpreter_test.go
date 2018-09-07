@@ -11,7 +11,7 @@ func runExpr(t *testing.T, src string, expectedVal interface{}) {
 	tokens := scanner.ScanTokens()
 	parser := NewParser(tokens)
 	expr := parser.expression()
-	interpreter := NewInterpreter()
+	interpreter := NewInterpreter(false)
 
 	value := interpreter.evaluate(expr)
 
@@ -37,7 +37,7 @@ func runStmt(t *testing.T, src string) {
 		t.Error("syntax error.")
 	}
 
-	interpreter := NewInterpreter()
+	interpreter := NewInterpreter(false)
 	resolver := NewResolver(interpreter)
 	resolver.Resolve(stmts)
 
@@ -63,7 +63,7 @@ func runSynErrStmt(t *testing.T, src string) {
 	if hadError {
 		return
 	}
-	interpreter := NewInterpreter()
+	interpreter := NewInterpreter(false)
 	interpreter.Interprete(stmts)
 
 	if interpreter.hadRuntimeError != true {
@@ -76,7 +76,7 @@ func runResErrStmt(t *testing.T, src string) {
 	parser := NewParser(scanner.ScanTokens())
 	stmts, _ := parser.Parse()
 
-	interpreter := NewInterpreter()
+	interpreter := NewInterpreter(false)
 	resolver := NewResolver(interpreter)
 
 	resolver.Resolve(stmts)
@@ -90,7 +90,7 @@ func runRuntimeErrStmt(t *testing.T, src string) {
 	parser := NewParser(scanner.ScanTokens())
 	stmts, _ := parser.Parse()
 
-	interpreter := NewInterpreter()
+	interpreter := NewInterpreter(false)
 	//resolver.Resolve(stmts)
 
 	//resolver.Resolve(stmts)

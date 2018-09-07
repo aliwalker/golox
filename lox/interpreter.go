@@ -5,17 +5,24 @@ import (
 )
 
 type Interpreter struct {
-	hadRuntimeError bool
-	environment     *Environment
-	global          *Environment
-	locals          map[Expr]int // with key = an Expr containing variable, value = distance from the current environment.
+	repl            bool         // REPL mode or not.
+	hadRuntimeError bool         // indicates runtime error.
+	environment     *Environment // current environment.
+	global          *Environment // global environment.
+	locals          map[Expr]int // for local variable resolution.
 }
 
-func NewInterpreter() *Interpreter {
+func NewInterpreter(repl bool) *Interpreter {
 	global := NewEnvironment(nil)
 	environment := global
 
-	return &Interpreter{false, global, environment, map[Expr]int{}}
+	return &Interpreter{
+		repl:            repl,
+		hadRuntimeError: false,
+		environment:     global,
+		global:          environment,
+		locals:          map[Expr]int{},
+	}
 }
 
 func (i *Interpreter) Interprete(stmts []Stmt) (hadRuntimeError bool) {
@@ -71,7 +78,10 @@ func (i *Interpreter) VisitControlStmt(stmt *Control) interface{} {
 }
 
 func (i *Interpreter) VisitExpressionStmt(stmt *Expression) interface{} {
-	i.evaluate(stmt.Expression)
+	val := i.evaluate(stmt.Expression)
+	if i.repl {
+		fmt.Println(stringify(val))
+	}
 	return nil
 }
 

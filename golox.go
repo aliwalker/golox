@@ -3,14 +3,13 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/aliwalker/golox/lox"
 )
-
-var interpreter = lox.NewInterpreter()
 
 func main() {
 	if len(os.Args) > 2 {
@@ -27,7 +26,7 @@ func main() {
 	}
 }
 
-func run(source string) (hadError, hadRuntimeError bool) {
+func run(interpreter *lox.Interpreter, source string) (hadError, hadRuntimeError bool) {
 	scanner := lox.NewScanner(source)
 	tokens := scanner.ScanTokens()
 	parser := lox.NewParser(tokens)
@@ -51,12 +50,14 @@ func RunFile(path string) {
 		err    error
 	)
 
+	interpreter := lox.NewInterpreter(false)
+
 	if dat, err = ioutil.ReadFile(path); err != nil {
 		fmt.Printf("Unable to read from file: %v.\n %v", path, err.Error())
 		os.Exit(1)
 	}
 	source = string(dat)
-	hadError, hadRuntimeError := run(source)
+	hadError, hadRuntimeError := run(interpreter, source)
 
 	if hadError {
 		os.Exit(65)
@@ -69,14 +70,18 @@ func RunFile(path string) {
 // RunPrompt provides a lox REPL environment.
 func RunPrompt() {
 	reader := bufio.NewReader(os.Stdin)
+	interpreter := lox.NewInterpreter(true)
 
 	for true {
 		fmt.Print("> ")
 		line, _, err := reader.ReadLine()
 		if err != nil {
+			if err == io.EOF {
+				os.Exit(0)
+			}
 			fmt.Println("error reading from stdin.")
 			os.Exit(80)
 		}
-		run(string(line))
+		run(interpreter, string(line))
 	}
 }
