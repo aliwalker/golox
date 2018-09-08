@@ -76,8 +76,7 @@ func (r *Resolver) resolve(node interface{}) {
 	}
 }
 
-// Resolve resolves names referenced in `stmts`.
-func (r *Resolver) Resolve(stmts []Stmt) {
+func (r *Resolver) resolveStmts(stmts []Stmt) {
 	defer func() {
 		if val := recover(); val != nil {
 			r.hadError = true
@@ -89,7 +88,12 @@ func (r *Resolver) Resolve(stmts []Stmt) {
 	for _, stmt := range stmts {
 		stmt.Accept(r)
 	}
+}
 
+// Resolve resolves names referenced in `stmts`.
+func (r *Resolver) Resolve(stmts []Stmt) bool {
+	r.resolveStmts(stmts)
+	return r.hadError
 }
 
 // ResolveLocal resolves the `name` referenced by `expr`.

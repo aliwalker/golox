@@ -36,7 +36,11 @@ func run(interpreter *lox.Interpreter, source string) (hadError, hadRuntimeError
 		return
 	}
 	resolver := lox.NewResolver(interpreter)
-	resolver.Resolve(stmts)
+	hadError = resolver.Resolve(stmts)
+
+	if hadError {
+		return
+	}
 
 	hadRuntimeError = interpreter.Interprete(stmts)
 	return

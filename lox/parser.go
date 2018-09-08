@@ -101,13 +101,13 @@ func (p *Parser) synchronize() {
 // parameters		-> IDENTIFIER ( "," IDENTIFIER )* ;
 // varDeclaration	-> "var" nameDeclaration ;
 // nameDeclaration	-> IDENTIFIER ( "=" expression ) ( "," IDENTIFIER ( "=" expression )? )* ";"
-// statement		-> block | expreStmt | printStmt | "break" | returnStmt ;
+// statement		-> block | expreStmt | printStmt | "break" ";"? | returnStmt ;
 // block			-> "{" declaration* "}" ;
-// printStmt		-> "print" expression ;
-// expreStmt		-> expression ;
+// printStmt		-> "print" expression ";"? ;
+// expreStmt		-> expression ";"? ;
 // forStmt			-> "for" "(" ( varDeclaration | expreStmt | ";" ) expression? ";" expression? ")" statement ;
 // IfStmt			-> "if" "(" expression ")" statement ( "else" statement  )? ;
-// returnStmt		-> "return" expression? ";" ;
+// returnStmt		-> "return" expression? ";"? ;
 // WhileStmt		-> "while" "(" expression ")" statement
 // expression		-> assignment ;
 // asignment		-> identifier ( "=" | "+=" | "-=" | "*=" | "/=" ) expression | logical_or ;
@@ -196,13 +196,14 @@ func (p *Parser) varDeclaration() Stmt {
 
 	varDecs := make([]*Var, 0)
 	varDecs = append(varDecs, varDec)
-	for !p.check(TokenSemi) {
-		p.consume(TokenComma, "unexpected token.")
+	for p.check(TokenComma) {
+		p.advance()
 		varDec = p.nameDeclaration()
 		varDecs = append(varDecs, varDec)
 	}
-	p.consume(TokenSemi, "expect ';' after variable declaration.")
-
+	if p.check(TokenSemi) {
+		p.advance()
+	}
 	return NewVarList(varDecs)
 }
 
@@ -358,14 +359,19 @@ func (p *Parser) ifStmt() Stmt {
 
 func (p *Parser) printStmt() Stmt {
 	expr := p.expression()
-	p.consume(TokenSemi, "expect ';' after print expression.")
+
+	if p.check(TokenSemi) {
+		p.advance()
+	}
 	return NewPrint(expr)
 }
 
 func (p *Parser) expressionStmt() Stmt {
 	expr := p.expression()
 
-	p.consume(TokenSemi, "expect ';' after expression.")
+	if p.check(TokenSemi) {
+		p.advance()
+	}
 	return NewExpression(expr)
 }
 
