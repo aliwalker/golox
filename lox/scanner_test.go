@@ -12,7 +12,7 @@ func errmsg(expectedType TokenType, token *Token) string {
 
 func checkLiteralToken(t *testing.T, src string, tokenType TokenType, val interface{}) {
 	scanner := NewScanner(src)
-	tokens := scanner.ScanTokens()
+	tokens, _ := scanner.ScanTokens()
 
 	if len(tokens) != 2 {
 		t.Error(fmt.Sprintf("expect len(tokens) to be 2, but got %v", len(tokens)))
@@ -47,7 +47,7 @@ func TestScanNumber(t *testing.T) {
 func TestScanSingleLine(t *testing.T) {
 	var scanner = NewScanner("var a = 1;")
 	var expectedTypes = []TokenType{TokenVar, TokenIdentifier, TokenEqual, TokenNumber, TokenSemi, TokenEOF}
-	var tokens = scanner.ScanTokens()
+	var tokens, _ = scanner.ScanTokens()
 
 	if len(tokens) != len(expectedTypes) {
 		t.Error(fmt.Sprintf("expect %v tokens, but got: %v", len(expectedTypes), len(tokens)))
@@ -61,8 +61,8 @@ func TestScanSingleLine(t *testing.T) {
 }
 
 func TestScanMultilines(t *testing.T) {
-	var scanner = NewScanner("var a;\nvar b;")
-	var tokens = scanner.ScanTokens()
+	scanner := NewScanner("var a;\nvar b;")
+	tokens, _ := scanner.ScanTokens()
 	var types = []TokenType{TokenVar, TokenIdentifier, TokenSemi, TokenVar, TokenIdentifier, TokenSemi, TokenEOF}
 
 	if len(tokens) != len(types) {
@@ -81,8 +81,8 @@ func TestScanMultilines(t *testing.T) {
 }
 
 func TestIdentifierName(t *testing.T) {
-	var scanner = NewScanner("varidentifier")
-	var tokens = scanner.ScanTokens()
+	scanner := NewScanner("varidentifier")
+	tokens, _ := scanner.ScanTokens()
 
 	if tokens[0].Type != TokenIdentifier {
 		t.Error(errmsg(TokenIdentifier, tokens[0]))

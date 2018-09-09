@@ -33,6 +33,7 @@ func main() {
 
 	defineAst(out, "Stmt", []string{
 		"Block		: Stmts []Stmt",
+		"Class		: Name *Token, Methods []*Function",
 		"Control	: Keyword *Token, CtrlType ControlType, Value Expr",
 		"Function	: Name *Token, Params []*Token, Body []Stmt",
 		"Expression	: Expression Expr",

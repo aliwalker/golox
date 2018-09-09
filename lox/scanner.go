@@ -49,7 +49,12 @@ func NewScanner(source string) *Scanner {
 }
 
 // ScanTokens returns a list of tokens from the source code.
-func (s *Scanner) ScanTokens() []*Token {
+func (s *Scanner) ScanTokens() ([]*Token, bool) {
+	return s.scanTokens(), s.hadError
+}
+
+// helper function.
+func (s *Scanner) scanTokens() []*Token {
 	defer func() {
 		if val := recover(); val != nil {
 			s.hadError = true
@@ -267,6 +272,11 @@ func (s *Scanner) number() {
 		}
 	}
 
+	// if it is followed by non-whitespace, it is an error.
+	if alphanumeric(s.peek()) {
+		panic(NewLexingError(s.line, "identifier must start with a letter or underscore."))
+	}
+
 	value, err := strconv.ParseFloat(
 		s.source[s.start:s.current],
 		32)
@@ -310,4 +320,13 @@ func alphanumeric(ch rune) bool {
 
 func digit(ch rune) bool {
 	return (ch >= '0' && ch <= '9')
+}
+
+func whitespace(ch rune) bool {
+	switch ch {
+	case ' ', '\t', '\n', '\r':
+		return true
+	default:
+		return false
+	}
 }

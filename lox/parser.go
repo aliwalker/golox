@@ -95,12 +95,13 @@ func (p *Parser) synchronize() {
 }
 
 // program			-> declaration* EOF ;
-// declaration		-> varDeclaration | funDeclaration ;
+// declaration		-> varDeclaration | funDeclaration | classDeclaration ;
+// classDelaration	-> "class" IDENTIFIER "{" function* "}" ;
 // funDeclaration	-> "fun" function ;
 // function			-> IDENTIFIER "(" parameters? ")" block ;
 // parameters		-> IDENTIFIER ( "," IDENTIFIER )* ;
-// varDeclaration	-> "var" nameDeclaration ;
-// nameDeclaration	-> IDENTIFIER ( "=" expression ) ( "," IDENTIFIER ( "=" expression )? )* ";"
+// varDeclaration	-> "var" nameDeclaration ("," nameDeclaration)* ";"? ;
+// nameDeclaration	-> IDENTIFIER ( "=" expression ) ;
 // statement		-> block | expreStmt | printStmt | "break" ";"? | returnStmt ;
 // block			-> "{" declaration* "}" ;
 // printStmt		-> "print" expression ";"? ;
@@ -118,7 +119,7 @@ func (p *Parser) synchronize() {
 // addition			-> multiplication ( ( "+" | "-" ) multiplication )* ;
 // multiplication 	-> unary ( ( "*" | "/" | "%" ) unary )* ;
 // unary			-> ( "!" | "-" ) unary | call ;
-// call				-> primary ( "(" expression ( "," expression )* "}" ) ;
+// call				-> primary ( "(" expression ( "," expression )* "}" | "." IDENTIFIER )* ;
 // primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | "true" | "false" | "nil" ;
 
 // Parse is the entry point of Parser.
@@ -144,6 +145,8 @@ func (p *Parser) declaration() Stmt {
 	}()
 
 	switch {
+	case p.match(TokenClass):
+		return p.classDeclaration()
 	case p.match(TokenVar):
 		return p.varDeclaration()
 	case p.match(TokenFun):
@@ -151,6 +154,25 @@ func (p *Parser) declaration() Stmt {
 	default:
 		return p.statement()
 	}
+}
+
+func (p *Parser) classDeclaration() Stmt {
+	var className *Token
+	var functions = make([]*Function, 0)
+
+	className = p.consume(TokenIdentifier, "expect class name to be an identifier.")
+	p.consume(TokenLeftBrace, "expect '{' after class name.")
+
+	for !p.check(TokenRightBrace) {
+		function, _ := p.function("method").(*Function)
+		functions = append(functions, function)
+	}
+
+	p.consume(TokenRightBrace, "expect '}' after class declaration.")
+	if len(functions) != 0 {
+		return NewClass(className, functions)
+	}
+	return NewClass(className, nil)
 }
 
 func (p *Parser) function(kind string) Stmt {
@@ -500,11 +522,15 @@ func (p *Parser) call() Expr {
 
 	expr = p.primary()
 
-	if p.check(TokenLeftParen) {
-		p.advance()
-		paren = p.previous()
-		arguments = p.arguments()
-		expr = NewCall(expr, paren, arguments)
+	for true {
+		if p.check(TokenLeftParen) {
+			p.advance()
+			paren = p.previous()
+			arguments = p.arguments()
+			expr = NewCall(expr, paren, arguments)
+		} else {
+			break
+		}
 	}
 
 	return expr

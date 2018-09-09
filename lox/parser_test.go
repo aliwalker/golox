@@ -23,7 +23,7 @@ func convertLogical(expr Expr) (*Logical, bool) {
 
 func parseSingleLine(t *testing.T, source string) []Stmt {
 	scanner := NewScanner(source)
-	tokens := scanner.ScanTokens()
+	tokens, _ := scanner.ScanTokens()
 	parser := NewParser(tokens)
 	stmts, hadError := parser.Parse()
 
@@ -39,8 +39,12 @@ func parseSingleLine(t *testing.T, source string) []Stmt {
 
 func parseErrStmt(t *testing.T, source string) {
 	scanner := NewScanner(source)
-	parser := NewParser(scanner.ScanTokens())
-	_, hadError := parser.Parse()
+	tokens, hadError := scanner.ScanTokens()
+	if hadError {
+		return
+	}
+	parser := NewParser(tokens)
+	_, hadError = parser.Parse()
 
 	if hadError != true {
 		t.Error("expect parsing error.")
@@ -332,7 +336,6 @@ func TestPrecedence(t *testing.T) {
 }
 
 func TestSyntaxError(t *testing.T) {
-	parseErrStmt(t, "1 + 2 * 3")         // statements require semicolon.
 	parseErrStmt(t, "\"string\" = 123;") // invalid assign target.
 	parseErrStmt(t, "1err;")             // unrecognized token.
 }

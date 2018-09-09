@@ -10,6 +10,7 @@ const (
 	_ FuncType = iota
 	FuncNone
 	FuncFunc
+	FuncMeth
 )
 
 // Resolver resolves bindings.
@@ -170,6 +171,18 @@ func (r *Resolver) VisitBlockStmt(stmt *Block) interface{} {
 	r.BeginScope()
 	r.resolve(stmt.Stmts)
 	r.EndScope()
+	return nil
+}
+
+func (r *Resolver) VisitClassStmt(stmt *Class) interface{} {
+	r.Declare(stmt.Name)
+	r.Define(stmt.Name)
+
+	// r.BeginScope()
+	// for _, f := range stmt.Methods {
+	// 	r.resolveFunction(f, FuncMeth)
+	// }
+	// r.EndScope()
 	return nil
 }
 

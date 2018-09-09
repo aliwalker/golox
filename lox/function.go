@@ -14,6 +14,9 @@ func (f *LoxFunction) Arity() int {
 }
 
 func (f *LoxFunction) Call(interpreter *Interpreter, arguments ...interface{}) (returnVal interface{}) {
+	enclosingEnv := f.Enclosing // for return usage.
+	env := NewEnvironment(enclosingEnv)
+
 	defer func() {
 		if val := recover(); val != nil {
 			returnControl, ok := val.(*Control)
@@ -28,19 +31,18 @@ func (f *LoxFunction) Call(interpreter *Interpreter, arguments ...interface{}) (
 			}
 
 			returnVal = interpreter.evaluate(returnControl.Value)
+			interpreter.environment = enclosingEnv
 		}
 	}()
-	env := NewEnvironment(f.Enclosing)
 
 	for i, param := range f.Declaration.Params {
 		env.Define(param.Lexeme, arguments[i])
 	}
 
 	interpreter.executeBlock(f.Declaration.Body, env)
-	// TODO: add return value when return statement is implemented.
-	return returnVal
+	return
 }
 
-func (f *LoxFunction) toString() string {
+func (f *LoxFunction) String() string {
 	return "<fn " + f.Declaration.Name.Lexeme + ">"
 }

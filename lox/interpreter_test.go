@@ -8,7 +8,11 @@ import (
 
 func runExpr(t *testing.T, src string, expectedVal interface{}) {
 	scanner := NewScanner(src)
-	tokens := scanner.ScanTokens()
+	tokens, hadError := scanner.ScanTokens()
+
+	if hadError {
+		t.Error("scanning error.")
+	}
 	parser := NewParser(tokens)
 	expr := parser.expression()
 	interpreter := NewInterpreter(false)
@@ -30,18 +34,27 @@ func runExpr(t *testing.T, src string, expectedVal interface{}) {
 
 func runStmt(t *testing.T, src string) {
 	scanner := NewScanner(src)
-	parser := NewParser(scanner.ScanTokens())
-	stmts, _ := parser.Parse()
+	tokens, hadError := scanner.ScanTokens()
+	if hadError {
+		t.Error("scanning error.")
+	}
 
-	if parser.hadError == true {
+	parser := NewParser(tokens)
+	stmts, hadError := parser.Parse()
+
+	astPrinter := NewAstPrinter()
+
+	astPrinter.Print(stmts)
+
+	if hadError == true {
 		t.Error("syntax error.")
 	}
 
 	interpreter := NewInterpreter(false)
 	resolver := NewResolver(interpreter)
-	resolver.Resolve(stmts)
+	hadError = resolver.Resolve(stmts)
 
-	if resolver.hadError == true {
+	if hadError == true {
 		t.Error("resolve error.")
 	}
 
@@ -57,7 +70,11 @@ func runStmt(t *testing.T, src string) {
 // specific errors, therefore some error checking are stripped.
 func runSynErrStmt(t *testing.T, src string) {
 	scanner := NewScanner(src)
-	parser := NewParser(scanner.ScanTokens())
+	tokens, hadError := scanner.ScanTokens()
+	if hadError {
+		return
+	}
+	parser := NewParser(tokens)
 	stmts, hadError := parser.Parse()
 
 	if hadError {
@@ -73,7 +90,8 @@ func runSynErrStmt(t *testing.T, src string) {
 
 func runResErrStmt(t *testing.T, src string) {
 	scanner := NewScanner(src)
-	parser := NewParser(scanner.ScanTokens())
+	tokens, _ := scanner.ScanTokens()
+	parser := NewParser(tokens)
 	stmts, _ := parser.Parse()
 
 	interpreter := NewInterpreter(false)
@@ -87,7 +105,8 @@ func runResErrStmt(t *testing.T, src string) {
 
 func runRuntimeErrStmt(t *testing.T, src string) {
 	scanner := NewScanner(src)
-	parser := NewParser(scanner.ScanTokens())
+	tokens, _ := scanner.ScanTokens()
+	parser := NewParser(tokens)
 	stmts, _ := parser.Parse()
 
 	interpreter := NewInterpreter(false)
@@ -111,16 +130,15 @@ func TestSynError(t *testing.T) {
 	runSynErrStmt(t, "a = 1;") // variable `a` is not defined.
 	runSynErrStmt(t, "var 1err = 123; 123;")
 	runSynErrStmt(t, "var a = 1; {\n\tvar b = 2;\n}\n\tprint b;")
-	runSynErrStmt(t, "fun foo() { print foo }")
 	runSynErrStmt(t, "fun foo(1) { print foo; }")
 	runSynErrStmt(t, "fun foo(a1, a2, a3, a4, a5, a6, a7, a8, a9){}")
-	runSynErrStmt(t, "\"notAFun\"();")
-	runSynErrStmt(t, "45();")
-	runSynErrStmt(t, "foo();")
 	runSynErrStmt(t, "fun foo(a1, a2) { print a1 + a2; } foo(1, 2, 3)")
 	runSynErrStmt(t, "else print 5;")
 }
 func TestRuntimeErrStmt(t *testing.T) {
+	runRuntimeErrStmt(t, "\"notAFun\"();")
+	runRuntimeErrStmt(t, "45();")
+	runRuntimeErrStmt(t, "foo();")
 	runRuntimeErrStmt(t, "var a, b = 1; a + b;")                                      // uninitialized variable a.
 	runRuntimeErrStmt(t, "a + b;")                                                    // undefined variable a and b.
 	runRuntimeErrStmt(t, "5.0 % 2;")                                                  // modulo arithmetic on floating point numbers.
@@ -140,10 +158,16 @@ func TestRunStmt(t *testing.T) {
 	runStmt(t, "var a; a = 2;") // test var & assign stmts.
 	runStmt(t, "{ var a = 1; print a; }")
 	runStmt(t, "for (var i = 0; i < 3; i = i + 1) { print i; }")
+	runStmt(t, "fun foo() { print foo }")
+
 }
 
+func TestClosure(t *testing.T) {
+	runStmt(t, "fun foo() { fun bar() { print \"bar\" } return bar; } var bar = foo() bar()")
+}
 func TestBinding(t *testing.T) {
 	runStmt(t, "var a = 0; { fun foo() { print a; } foo(); var a = 1; foo(); }")
+	runStmt(t, "fun foo() { fun bar() { print \"bar\" } bar() }")
 }
 
 func TestVarListStmt(t *testing.T) {

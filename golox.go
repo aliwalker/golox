@@ -28,7 +28,12 @@ func main() {
 
 func run(interpreter *lox.Interpreter, source string) (hadError, hadRuntimeError bool) {
 	scanner := lox.NewScanner(source)
-	tokens := scanner.ScanTokens()
+	tokens, hadError := scanner.ScanTokens()
+
+	if hadError {
+		return
+	}
+
 	parser := lox.NewParser(tokens)
 	stmts, hadError := parser.Parse()
 
@@ -80,6 +85,7 @@ func RunPrompt() {
 		fmt.Print("> ")
 		line, _, err := reader.ReadLine()
 		if err != nil {
+			// if the user press Ctrl + C or Ctrl + D, err will be io.EOF.
 			if err == io.EOF {
 				os.Exit(0)
 			}

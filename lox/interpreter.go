@@ -54,13 +54,11 @@ func (i *Interpreter) executeBlock(stmts []Stmt, env *Environment) {
 	prevEnv := i.environment
 	i.environment = env
 
-	defer func() {
-		i.environment = prevEnv
-	}()
-
 	for _, stmt := range stmts {
 		i.execute(stmt)
 	}
+
+	i.environment = prevEnv
 }
 
 func (i *Interpreter) resolve(expr Expr, distance int) {
@@ -72,6 +70,13 @@ func (i *Interpreter) VisitBlockStmt(stmt *Block) interface{} {
 	return nil
 }
 
+func (i *Interpreter) VisitClassStmt(stmt *Class) interface{} {
+	i.environment.Define(stmt.Name.Lexeme, nil)
+	class := NewLoxClass(stmt.Name.Lexeme)
+	i.environment.Assign(stmt.Name, class)
+	return nil
+}
+
 func (i *Interpreter) VisitControlStmt(stmt *Control) interface{} {
 	// throw it to unwind the call stack.
 	panic(stmt)
@@ -80,7 +85,7 @@ func (i *Interpreter) VisitControlStmt(stmt *Control) interface{} {
 func (i *Interpreter) VisitExpressionStmt(stmt *Expression) interface{} {
 	val := i.evaluate(stmt.Expression)
 	if i.repl {
-		fmt.Println(stringify(val))
+		fmt.Println(val)
 	}
 	return nil
 }
@@ -102,19 +107,20 @@ func (i *Interpreter) VisitIfStmt(stmt *If) interface{} {
 
 func (i *Interpreter) VisitPrintStmt(stmt *Print) interface{} {
 	val := i.evaluate(stmt.Expression)
-	fmt.Println(stringify(val))
+	fmt.Println(val)
 	return nil
 }
 
+/*
 func stringify(value interface{}) interface{} {
 	switch v := value.(type) {
 	case int, float64, string:
 		return v
 	case printable:
-		return v.toString()
+		return v.String()
 	}
 	return value
-}
+}*/
 
 func (i *Interpreter) VisitVarStmt(stmt *Var) interface{} {
 	var (
