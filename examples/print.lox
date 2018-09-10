@@ -1,7 +1,8 @@
-print "a string.";	// "a string."
-print 1 + 2;		// 3
+print "a string."	// "a string."
+print 1 + 2			// 3
 
 fun foo() {
-	print "bar";
+	print "bar"
 }
-print foo;			// <fn foo>
+print foo			// <fn foo>
+foo()

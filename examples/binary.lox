@@ -1,25 +1,25 @@
-var a = 1;
-var b = 2;
-print a + b;            // 3
+var a = 1
+var b = 2
+print a + b             // 3
 
-print a + a + b;        // 4
+print a + a + b         // 4
 
-var s1 = "string a, ";
-var s2 = "string b.";
-print s1 + s2;          // string a, string b.
+var s1 = "string a, "
+var s2 = "string b."
+print s1 + s2           // string a, string b.
 
-print 5 - 1;            // 4
-print 5.0 - 1;          // 4
+print 5 - 1             // 4
+print 5.0 - 1           // 4
 
-var a = 5;
-var b = 2;
-print a % b;            // 1
+var a = 5
+var b = 2
+print a % b             // 1
 
-print 5 / 2;
-print 5.0 / 2;          // 2.5
+print 5 / 2
+print 5.0 / 2           // 2.5
 
-print 2 * 5;            // 10
-print 2.1 * 5;          // 10.5
+print 2 * 5             // 10
+print 2.1 * 5           // 10.5
 
-print true and false;   // false
-print 1 or 0;           // 1
+print true and false    // false
+print 1 or 0            // 1

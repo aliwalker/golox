@@ -1,10 +1,10 @@
-var a = 1;
+var a = 1
 {
     fun foo() {
-        print a;
+        print a
     }
 
-    foo();
-    var a = 2;
-    foo();
+    foo()       // 1
+    var a = 2
+    foo()       // 1
 }

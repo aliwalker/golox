@@ -19,13 +19,6 @@ fun fibnacii() {
 }
 
 var next = fibnacii()
-print next()
-print next()
-print next()
-print next()
-print next()
-print next()
-print next()
-print next()
-print next()
-print next()
+for (var i = 0; i < 10; i += 1) {
+    print next()
+}

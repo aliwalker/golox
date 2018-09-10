@@ -14,8 +14,8 @@ func (f *LoxFunction) Arity() int {
 }
 
 func (f *LoxFunction) Call(interpreter *Interpreter, arguments ...interface{}) (returnVal interface{}) {
-	enclosingEnv := f.Enclosing // for return usage.
-	env := NewEnvironment(enclosingEnv)
+	enclosingEnv := interpreter.environment // for return usage.
+	env := NewEnvironment(f.Enclosing)
 
 	defer func() {
 		if val := recover(); val != nil {
