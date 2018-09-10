@@ -2,6 +2,8 @@ package lox
 
 import (
 	"fmt"
+
+	"github.com/fatih/color"
 )
 
 type Interpreter struct {
@@ -85,7 +87,10 @@ func (i *Interpreter) VisitControlStmt(stmt *Control) interface{} {
 func (i *Interpreter) VisitExpressionStmt(stmt *Expression) interface{} {
 	val := i.evaluate(stmt.Expression)
 	if i.repl {
-		fmt.Println(val)
+		if val == nil {
+			return nil
+		}
+		color.Cyan("%v", val)
 	}
 	return nil
 }
@@ -107,7 +112,7 @@ func (i *Interpreter) VisitIfStmt(stmt *If) interface{} {
 
 func (i *Interpreter) VisitPrintStmt(stmt *Print) interface{} {
 	val := i.evaluate(stmt.Expression)
-	fmt.Println(val)
+	color.Cyan("%v", val)
 	return nil
 }
 

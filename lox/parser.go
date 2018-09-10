@@ -120,7 +120,7 @@ func (p *Parser) synchronize() {
 // multiplication 	-> unary ( ( "*" | "/" | "%" ) unary )* ;
 // unary			-> ( "!" | "-" ) unary | call ;
 // call				-> primary ( "(" expression ( "," expression )* "}" | "." IDENTIFIER )* ;
-// primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | "true" | "false" | "nil" ;
+// primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | anonymousFunc | "true" | "false" | "nil" ;
 
 // Parse is the entry point of Parser.
 func (p *Parser) Parse() ([]Stmt, bool) {
@@ -250,7 +250,9 @@ func (p *Parser) statement() Stmt {
 	switch {
 	case p.match(TokenBreak):
 		keyword := p.previous()
-		p.consume(TokenSemi, "expect ';' after 'break'.")
+		if p.check(TokenSemi) {
+			p.advance()
+		}
 		return NewControl(keyword, ControlBreak, nil)
 	case p.match(TokenFor):
 		return p.forStmt()
@@ -265,7 +267,10 @@ func (p *Parser) statement() Stmt {
 		if !p.check(TokenSemi) {
 			value = p.expression()
 		}
-		p.consume(TokenSemi, "expect ';' after return value.")
+
+		if p.check(TokenSemi) {
+			p.advance()
+		}
 		return NewControl(keyword, ControlReturn, value)
 	case p.match(TokenLeftBrace):
 		return NewBlock(p.block())

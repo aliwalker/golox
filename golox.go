@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/aliwalker/golox/lox"
+	"github.com/chzyer/readline"
 )
 
 func main() {
@@ -78,15 +78,25 @@ func RunFile(path string) {
 
 // RunPrompt provides a lox REPL environment.
 func RunPrompt() {
-	reader := bufio.NewReader(os.Stdin)
+	//reader := bufio.NewReader(os.Stdin)
+	reader, err := readline.New("> ")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(80)
+	}
 	interpreter := lox.NewInterpreter(true)
 
-	for true {
+	for {
 		fmt.Print("> ")
-		line, _, err := reader.ReadLine()
+		line, err := reader.Readline()
 		if err != nil {
 			// if the user press Ctrl + C or Ctrl + D, err will be io.EOF.
 			if err == io.EOF {
+				os.Exit(0)
+			}
+			// FIXME: I know this is ugly...
+			if err.Error() == "Interrupt" {
 				os.Exit(0)
 			}
 			fmt.Println("error reading from stdin.")
