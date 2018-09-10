@@ -138,6 +138,11 @@ func (r *Resolver) VisitGroupingExpr(expr *Grouping) interface{} {
 	return nil
 }
 
+func (r *Resolver) VisitLambdaExpr(expr *Lambda) interface{} {
+	r.resolveFunction(expr.LambdaFunc, FuncFunc)
+	return nil
+}
+
 // VisitLiteralExpr doesn't do anything because there's nothing to resolve.
 func (r *Resolver) VisitLiteralExpr(expr *Literal) interface{} {
 	return nil

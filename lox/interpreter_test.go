@@ -42,10 +42,6 @@ func runStmt(t *testing.T, src string) {
 	parser := NewParser(tokens)
 	stmts, hadError := parser.Parse()
 
-	astPrinter := NewAstPrinter()
-
-	astPrinter.Print(stmts)
-
 	if hadError == true {
 		t.Error("syntax error.")
 	}
@@ -160,6 +156,10 @@ func TestRunStmt(t *testing.T) {
 	runStmt(t, "for (var i = 0; i < 3; i = i + 1) { print i; }")
 	runStmt(t, "fun foo() { print foo }")
 
+}
+
+func TestLambda(t *testing.T) {
+	runStmt(t, "var a = () -> 1 + 2; print a()")
 }
 
 func TestClosure(t *testing.T) {

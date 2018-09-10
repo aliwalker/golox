@@ -25,6 +25,7 @@ func main() {
 		"Binary		: Left Expr, Operator *Token, Right Expr",
 		"Call		: Callee Expr, Paren *Token, Arguments []Expr",
 		"Grouping	: Expression Expr",
+		"Lambda		: LambdaFunc *Function",
 		"Literal	: Value interface{}",
 		"Logical	: Left Expr, Operator *Token, Right Expr",
 		"Unary		: Operator *Token, Right Expr",

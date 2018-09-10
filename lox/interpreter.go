@@ -301,6 +301,10 @@ func (i *Interpreter) VisitGroupingExpr(expr *Grouping) interface{} {
 	return innerVal
 }
 
+func (i *Interpreter) VisitLambdaExpr(expr *Lambda) interface{} {
+	return NewLoxFunction(expr.LambdaFunc, i.environment)
+}
+
 func (i *Interpreter) VisitLiteralExpr(expr *Literal) interface{} {
 	return expr.Value
 }

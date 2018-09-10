@@ -44,5 +44,8 @@ func (f *LoxFunction) Call(interpreter *Interpreter, arguments ...interface{}) (
 }
 
 func (f *LoxFunction) String() string {
+	if f.Declaration.Name == nil {
+		return "<fn " + "lambda" + ">"
+	}
 	return "<fn " + f.Declaration.Name.Lexeme + ">"
 }

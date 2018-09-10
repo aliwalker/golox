@@ -171,6 +171,31 @@ func (p *AstPrinter) VisitLiteralExpr(expr *Literal) interface{} {
 	}
 }
 
+func (p *AstPrinter) VisitLambdaExpr(expr *Lambda) interface{} {
+	lambda := expr.LambdaFunc
+
+	ast := getIndents(p.indents) + "(lambda " + "("
+	for i, param := range lambda.Params {
+		if i != 0 {
+			ast += " "
+		}
+		ast += param.Lexeme
+	}
+	ast += ")\n"
+
+	p.indents++
+	defer func() {
+		p.indents--
+	}()
+
+	for _, st := range lambda.Body {
+		val, _ := st.Accept(p).(string)
+		ast += val
+	}
+
+	return ast
+}
+
 func (p *AstPrinter) VisitLogicalExpr(expr *Logical) interface{} {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right)
 }

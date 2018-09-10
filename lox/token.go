@@ -32,6 +32,9 @@ const (
 	TokenSlashEqual
 	TokenPercentEqual
 
+	// lambda operator.
+	TokenArrow
+
 	// one or two
 	TokenBang
 	TokenBangEqual

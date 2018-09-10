@@ -568,11 +568,68 @@ func (p *Parser) primary() Expr {
 		return NewLiteral(nil)
 	case p.match(TokenNumber, TokenString):
 		return NewLiteral(p.previous().Literal)
-	case p.match(TokenLeftParen): // grouping.
+	case p.match(TokenLeftParen):
+		if p.check(TokenIdentifier) {
+			params := make([]*Token, 0)
+
+			for !p.check(TokenRightParen) {
+				param := p.consume(TokenIdentifier, "expect parameter to be an identifier.")
+				params = append(params, param)
+				if !p.check(TokenRightParen) {
+					p.consume(TokenComma, "params should be separated by commas.")
+					// TODO: Fix the trailing comma.
+				}
+			}
+
+			p.consume(TokenRightParen, "expect ')' after parameter list.")
+
+			return p.lambda(params)
+		} else if p.match(TokenRightParen) {
+			if p.check(TokenArrow) {
+				// an empty list of parameter.
+				return p.lambda(nil)
+			}
+			panic(NewLoxError(p.previous(), "unexpected token."))
+		}
+
 		expr := p.expression()
 		p.consume(TokenRightParen, "expect ')' after expression.")
 		return NewGrouping(expr)
 	default:
 		panic(NewLoxError(p.peek(), "expect expression."))
 	}
+}
+
+func (p *Parser) lambda(params []*Token) Expr {
+	var (
+		body []Stmt
+		fun  *Function
+	)
+
+	p.consume(TokenArrow, "expect '->' after parameter list.")
+
+	if p.check(TokenLeftBrace) {
+		p.advance()
+		body = p.block()
+	} else if p.end() {
+		panic(NewLoxError(p.peek(), "unterminated lambda."))
+	} else {
+		// if the body is a single expression, we treat it as a return value
+		// of this lambda. And we have to manually and a return token.
+		line := p.peek().Line
+		value := p.expression()
+		if p.check(TokenSemi) {
+			p.advance()
+		}
+
+		returnStmt := NewControl(
+			NewToken(TokenReturn, "return", nil, line),
+			ControlReturn,
+			value)
+		body = make([]Stmt, 0)
+		body = append(body, returnStmt)
+	}
+
+	fun, _ = NewFunction(nil, params, body).(*Function)
+	return NewLambda(fun)
 }

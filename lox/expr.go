@@ -5,6 +5,7 @@ type ExprVisitor interface {
 	VisitBinaryExpr(expr *Binary) interface{}
 	VisitCallExpr(expr *Call) interface{}
 	VisitGroupingExpr(expr *Grouping) interface{}
+	VisitLambdaExpr(expr *Lambda) interface{}
 	VisitLiteralExpr(expr *Literal) interface{}
 	VisitLogicalExpr(expr *Logical) interface{}
 	VisitUnaryExpr(expr *Unary) interface{}
@@ -63,6 +64,17 @@ func NewGrouping(expression Expr) Expr {
 }
 func (expr *Grouping) Accept(v ExprVisitor) interface{} {
 	return v.VisitGroupingExpr(expr)
+}
+
+type Lambda struct {
+	LambdaFunc *Function
+}
+
+func NewLambda(lambdafunc *Function) Expr {
+	return &Lambda{LambdaFunc: lambdafunc}
+}
+func (expr *Lambda) Accept(v ExprVisitor) interface{} {
+	return v.VisitLambdaExpr(expr)
 }
 
 type Literal struct {

@@ -91,6 +91,10 @@ func (s *Scanner) scanToken() {
 
 	// one or two chars.
 	case '-':
+		if s.match('>') {
+			s.addToken(TokenArrow, nil)
+			return
+		}
 		s.addIfMatch('=', TokenMinusEqual, TokenMinus)
 	case '+':
 		s.addIfMatch('=', TokenPlusEqual, TokenPlus)
@@ -164,10 +168,10 @@ func (s *Scanner) match(expected rune) bool {
 		return false
 	}
 
-	ch, sz, err := s.reader.ReadRune()
-	if err != nil {
-		panic(fmt.Sprintf("match error: %v", err))
-	}
+	ch, sz, _ := s.reader.ReadRune()
+	// if err != nil {
+	// 	panic(fmt.Sprintf("match error: %v", err))
+	// }
 
 	if ch != expected {
 		if err := s.reader.UnreadRune(); err != nil {
