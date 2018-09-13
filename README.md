@@ -3,9 +3,12 @@ This repo is a go implementation of Lox language. Lox is a dynamic scripting lan
 
 This implementation adds some more features:
 
-- Semicolon is not a must(you can add it if you wanted too).
-- Lambda expressions(anonymous functions).
-- Enhanced REPL.
+- [x] Semicolon is not a must. :-)
+- [x] Lambda expressions(anonymous functions).
+- [x] Support break statement from loops.
+- [ ] Support `for ... of` statement.
+- [ ] Support Array, Map.
+- [ ] Enhanced REPL.
 
 ## Example
 
@@ -13,6 +16,7 @@ This implementation adds some more features:
 fun fibnacii() {
     var prev = 0, cur = 0
 
+    // lambda expression.
     return () -> {
         if (cur == 0) {
             cur = 1

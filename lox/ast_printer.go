@@ -152,6 +152,10 @@ func (p *AstPrinter) VisitCallExpr(expr *Call) interface{} {
 	return p.parenthesize("call", expr.Callee, expr.Arguments)
 }
 
+func (p *AstPrinter) VisitGetExpr(expr *Get) interface{} {
+	return p.parenthesize("get", expr.Object, expr.Name)
+}
+
 func (p *AstPrinter) VisitGroupingExpr(expr *Grouping) interface{} {
 	return p.parenthesize("group", expr.Expression)
 }
@@ -198,6 +202,10 @@ func (p *AstPrinter) VisitLambdaExpr(expr *Lambda) interface{} {
 
 func (p *AstPrinter) VisitLogicalExpr(expr *Logical) interface{} {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right)
+}
+
+func (p *AstPrinter) VisitSetExpr(expr *Set) interface{} {
+	return p.parenthesize("set", expr.Object, expr.Name, expr.Value)
 }
 
 func (p *AstPrinter) VisitUnaryExpr(expr *Unary) interface{} {

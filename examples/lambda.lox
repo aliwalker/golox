@@ -1,7 +1,7 @@
 var greetLambda = (name) -> "hello" + name
 print greetLambda("Jullie")
 
-fun fibnacii() {
+var next = () -> {
     var prev = 0, cur = 0
 
     return () -> {
@@ -16,9 +16,9 @@ fun fibnacii() {
 
         return res
     }
-}
+}()
 
-var next = fibnacii()
+//var next = fibnacii()
 for (var i = 0; i < 10; i += 1) {
     print next()
 }

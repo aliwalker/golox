@@ -24,10 +24,12 @@ func main() {
 		"Assign		: Name *Token, Operator *Token, Value Expr",
 		"Binary		: Left Expr, Operator *Token, Right Expr",
 		"Call		: Callee Expr, Paren *Token, Arguments []Expr",
+		"Get		: Object Expr, Name *Token",
 		"Grouping	: Expression Expr",
 		"Lambda		: LambdaFunc *Function",
 		"Literal	: Value interface{}",
 		"Logical	: Left Expr, Operator *Token, Right Expr",
+		"Set		: Object Expr, Name *Token, Value Expr",
 		"Unary		: Operator *Token, Right Expr",
 		"Variable	: Name *Token",
 	})

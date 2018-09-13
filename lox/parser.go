@@ -111,7 +111,7 @@ func (p *Parser) synchronize() {
 // returnStmt		-> "return" expression? ";"? ;
 // WhileStmt		-> "while" "(" expression ")" statement
 // expression		-> assignment ;
-// asignment		-> identifier ( "=" | "+=" | "-=" | "*=" | "/=" ) expression | logical_or ;
+// asignment		-> ( call "." )? identifier ( "=" | "+=" | "-=" | "*=" | "/=" ) expression | logical_or ;
 // logical_or		-> logical_and ( "or" logical_and )* ;
 // logical_and		-> equality ( "and" equality )* ;
 // equality			-> comparison ( ( "==" | "!=" ) comparison )* ;
@@ -120,8 +120,8 @@ func (p *Parser) synchronize() {
 // multiplication 	-> unary ( ( "*" | "/" | "%" ) unary )* ;
 // unary			-> ( "!" | "-" ) unary | call ;
 // call				-> primary ( "(" expression ( "," expression )* "}" | "." IDENTIFIER )* ;
-// primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | anonymousFunc | "true" | "false" | "nil" ;
-
+// primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | lambda | "true" | "false" | "nil" ;
+// lambda			-> "(" parameters ")" "->" statement ;
 // Parse is the entry point of Parser.
 func (p *Parser) Parse() ([]Stmt, bool) {
 	var stmts []Stmt
@@ -431,6 +431,8 @@ func (p *Parser) assignment() Expr {
 		if varExpr, ok := expr.(*Variable); ok {
 			name := varExpr.Name
 			return NewAssign(name, operator, value)
+		} else if getExpr, ok := expr.(*Get); ok {
+			return NewSet(getExpr, getExpr.Name, value)
 		}
 
 		errmsg := "invalid assign target."
@@ -533,6 +535,10 @@ func (p *Parser) call() Expr {
 			paren = p.previous()
 			arguments = p.arguments()
 			expr = NewCall(expr, paren, arguments)
+		} else if p.check(TokenDot) {
+			// get expression.
+			name := p.consume(TokenIdentifier, "expect a property name.")
+			expr = NewGet(expr, name)
 		} else {
 			break
 		}

@@ -4,10 +4,12 @@ type ExprVisitor interface {
 	VisitAssignExpr(expr *Assign) interface{}
 	VisitBinaryExpr(expr *Binary) interface{}
 	VisitCallExpr(expr *Call) interface{}
+	VisitGetExpr(expr *Get) interface{}
 	VisitGroupingExpr(expr *Grouping) interface{}
 	VisitLambdaExpr(expr *Lambda) interface{}
 	VisitLiteralExpr(expr *Literal) interface{}
 	VisitLogicalExpr(expr *Logical) interface{}
+	VisitSetExpr(expr *Set) interface{}
 	VisitUnaryExpr(expr *Unary) interface{}
 	VisitVariableExpr(expr *Variable) interface{}
 }
@@ -55,6 +57,18 @@ func (expr *Call) Accept(v ExprVisitor) interface{} {
 	return v.VisitCallExpr(expr)
 }
 
+type Get struct {
+	Object Expr
+	Name   *Token
+}
+
+func NewGet(object Expr, name *Token) Expr {
+	return &Get{Object: object, Name: name}
+}
+func (expr *Get) Accept(v ExprVisitor) interface{} {
+	return v.VisitGetExpr(expr)
+}
+
 type Grouping struct {
 	Expression Expr
 }
@@ -99,6 +113,19 @@ func NewLogical(left Expr, operator *Token, right Expr) Expr {
 }
 func (expr *Logical) Accept(v ExprVisitor) interface{} {
 	return v.VisitLogicalExpr(expr)
+}
+
+type Set struct {
+	Object Expr
+	Name   *Token
+	Value  Expr
+}
+
+func NewSet(object Expr, name *Token, value Expr) Expr {
+	return &Set{Object: object, Name: name, Value: value}
+}
+func (expr *Set) Accept(v ExprVisitor) interface{} {
+	return v.VisitSetExpr(expr)
 }
 
 type Unary struct {

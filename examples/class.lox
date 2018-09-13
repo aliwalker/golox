@@ -1,0 +1,7 @@
+class Foo {
+    bar() {
+        print "bar"
+    }
+}
+
+var foo = Foo()

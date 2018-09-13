@@ -133,6 +133,11 @@ func (r *Resolver) VisitCallExpr(expr *Call) interface{} {
 	return nil
 }
 
+func (r *Resolver) VisitGetExpr(expr *Get) interface{} {
+	r.resolve(expr.Object)
+	return nil
+}
+
 func (r *Resolver) VisitGroupingExpr(expr *Grouping) interface{} {
 	r.resolve(expr.Expression)
 	return nil
@@ -152,6 +157,13 @@ func (r *Resolver) VisitLiteralExpr(expr *Literal) interface{} {
 func (r *Resolver) VisitLogicalExpr(expr *Logical) interface{} {
 	r.resolve(expr.Left)
 	r.resolve(expr.Right)
+	return nil
+}
+
+// VisitSetExpr resolves set expression.
+func (r *Resolver) VisitSetExpr(expr *Set) interface{} {
+	r.resolve(expr.Value)
+	r.resolve(expr.Object)
 	return nil
 }
 

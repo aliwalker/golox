@@ -292,8 +292,16 @@ func (i *Interpreter) VisitCallExpr(expr *Call) interface{} {
 		args = append(args, i.evaluate(arg))
 	}
 
-	// TODO: add return value.
 	return function.Call(i, args...)
+}
+
+func (i *Interpreter) VisitGetExpr(expr *Get) interface{} {
+	object, ok := i.evaluate(expr.Object).(*LoxInstance)
+
+	if ok != true {
+		panic(NewRuntimeError(expr.Name, "Only instance can have properties."))
+	}
+	return object.Get(expr.Name)
 }
 
 func (i *Interpreter) VisitGroupingExpr(expr *Grouping) interface{} {
@@ -323,6 +331,24 @@ func (i *Interpreter) VisitLogicalExpr(expr *Logical) interface{} {
 	}
 
 	return i.evaluate(expr.Right)
+}
+
+func (i *Interpreter) VisitSetExpr(expr *Set) interface{} {
+	var (
+		loxInstance *LoxInstance
+		value       interface{}
+		ok          bool
+	)
+
+	value = i.evaluate(expr.Object)
+
+	if loxInstance, ok = value.(*LoxInstance); ok != true {
+		panic(NewRuntimeError(expr.Name, "set property on a non Lox instance object."))
+	}
+
+	value = i.evaluate(expr.Value)
+	loxInstance.Set(expr.Name, value)
+	return value
 }
 
 func (i *Interpreter) VisitUnaryExpr(expr *Unary) interface{} {
