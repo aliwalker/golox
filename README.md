@@ -1,13 +1,14 @@
 # Golox
-This repo is a go implementation of Lox language. Lox is a dynamic scripting language designed by [Bob Nystrom](https://github.com/munificent) in his book [Crafting Interpreter](http://www.craftinginterpreters.com). Refer to [chapter 3](http://www.craftinginterpreters.com/the-lox-language.html) of the book for an overview of Lox lang.
+This repo is a go implementation of Lox language. Lox is a dynamic scripting language designed by [Bob Nystrom](https://github.com/munificent) in his book [Crafting Interpreter](http://www.craftinginterpreters.com). Lox is really like JavaScript. Refer to [chapter 3](http://www.craftinginterpreters.com/the-lox-language.html) of the book for an overview of Lox lang.
 
 This implementation adds some more features:
 
 - [x] Semicolon is not a must. :-)
 - [x] Lambda expressions(anonymous functions).
 - [x] Support break statement from loops.
+- [ ] Support getters/setters, static methods for classes.
 - [ ] Support `for ... of` statement.
-- [ ] Support Array, Map.
+- [ ] Support Arrays, Maps.
 - [ ] Enhanced REPL.
 
 ## Example

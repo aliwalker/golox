@@ -19,12 +19,20 @@ type Resolver struct {
 	interpreter *Interpreter
 	curFunc     FuncType
 	inLoop      bool
+	inClass     bool
 	hadError    bool
 }
 
 // NewResolver returns a new resolver.
 func NewResolver(interpreter *Interpreter) *Resolver {
-	return &Resolver{NewScopes(), interpreter, FuncNone, false, false}
+	return &Resolver{
+		scopes:      NewScopes(),
+		interpreter: interpreter,
+		curFunc:     FuncNone,
+		inLoop:      false,
+		inClass:     false,
+		hadError:    false,
+	}
 }
 
 // BeginScope is called when resolver enters a new scope.
@@ -169,6 +177,9 @@ func (r *Resolver) VisitSetExpr(expr *Set) interface{} {
 
 // VisitThisExpr resolves "this"
 func (r *Resolver) VisitThisExpr(expr *This) interface{} {
+	if !r.inClass {
+		panic(NewLoxError(expr.Keyword, "\"this\" in non-class function."))
+	}
 	r.resolveLocal(expr, expr.Keyword)
 	return nil
 }
@@ -200,6 +211,12 @@ func (r *Resolver) VisitBlockStmt(stmt *Block) interface{} {
 func (r *Resolver) VisitClassStmt(stmt *Class) interface{} {
 	r.Declare(stmt.Name)
 	r.Define(stmt.Name)
+	r.inClass = true
+	preClass := r.inClass
+
+	defer func() {
+		r.inClass = preClass
+	}()
 
 	// Since we added "this", we need another layer between the scope containing the class
 	// and the method scope.
