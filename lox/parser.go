@@ -432,7 +432,7 @@ func (p *Parser) assignment() Expr {
 			name := varExpr.Name
 			return NewAssign(name, operator, value)
 		} else if getExpr, ok := expr.(*Get); ok {
-			return NewSet(getExpr, getExpr.Name, value)
+			return NewSet(getExpr.Object, getExpr.Name, value)
 		}
 
 		errmsg := "invalid assign target."
@@ -537,6 +537,7 @@ func (p *Parser) call() Expr {
 			expr = NewCall(expr, paren, arguments)
 		} else if p.check(TokenDot) {
 			// get expression.
+			p.advance()
 			name := p.consume(TokenIdentifier, "expect a property name.")
 			expr = NewGet(expr, name)
 		} else {
