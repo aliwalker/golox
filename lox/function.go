@@ -13,6 +13,13 @@ func (f *LoxFunction) Arity() int {
 	return len(f.Declaration.Params)
 }
 
+// Bind adds a new scope containing "this", which is bound to the given LoxInstance.
+func (f *LoxFunction) Bind(instance *LoxInstance) *LoxFunction {
+	env := NewEnvironment(f.Enclosing)
+	env.Define("this", instance)
+	return NewLoxFunction(f.Declaration, env)
+}
+
 func (f *LoxFunction) Call(interpreter *Interpreter, arguments ...interface{}) (returnVal interface{}) {
 	enclosingEnv := interpreter.environment // for return usage.
 	env := NewEnvironment(f.Enclosing)

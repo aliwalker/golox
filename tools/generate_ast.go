@@ -30,6 +30,7 @@ func main() {
 		"Literal	: Value interface{}",
 		"Logical	: Left Expr, Operator *Token, Right Expr",
 		"Set		: Object Expr, Name *Token, Value Expr",
+		"This		: Keyword *Token",
 		"Unary		: Operator *Token, Right Expr",
 		"Variable	: Name *Token",
 	})

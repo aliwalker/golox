@@ -16,10 +16,15 @@ func NewLoxInstance(class *LoxClass) *LoxInstance {
 func (o *LoxInstance) Get(name *Token) interface{} {
 	val, ok := o.props[name.Lexeme]
 
-	if ok != true {
-		panic(NewRuntimeError(name, "undefined property."))
+	if ok {
+		return val
 	}
-	return val
+
+	val = o.class.FindMethod(o, name.Lexeme)
+	if val != nil {
+		return val
+	}
+	panic(NewRuntimeError(name, "undefined property."))
 }
 
 // Set sets a field to the given value.

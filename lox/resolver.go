@@ -167,6 +167,12 @@ func (r *Resolver) VisitSetExpr(expr *Set) interface{} {
 	return nil
 }
 
+// VisitThisExpr resolves "this"
+func (r *Resolver) VisitThisExpr(expr *This) interface{} {
+	r.resolveLocal(expr, expr.Keyword)
+	return nil
+}
+
 // VisitUnaryExpr resolves Right.
 func (r *Resolver) VisitUnaryExpr(expr *Unary) interface{} {
 	r.resolve(expr.Right)
@@ -195,14 +201,20 @@ func (r *Resolver) VisitClassStmt(stmt *Class) interface{} {
 	r.Declare(stmt.Name)
 	r.Define(stmt.Name)
 
-	// r.BeginScope()
-	// for _, f := range stmt.Methods {
-	// 	r.resolveFunction(f, FuncMeth)
-	// }
-	// r.EndScope()
+	// Since we added "this", we need another layer between the scope containing the class
+	// and the method scope.
+	r.BeginScope()
+	r.scopes.Peek()["this"] = varDefined
+
+	for _, f := range stmt.Methods {
+		r.resolveFunction(f, FuncMeth)
+	}
+
+	r.EndScope()
 	return nil
 }
 
+// VisitControlStmt interpretes "break" & "return" statements.
 func (r *Resolver) VisitControlStmt(stmt *Control) interface{} {
 	if stmt.CtrlType == ControlReturn {
 		if r.curFunc == FuncNone {

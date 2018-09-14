@@ -120,7 +120,7 @@ func (p *Parser) synchronize() {
 // multiplication 	-> unary ( ( "*" | "/" | "%" ) unary )* ;
 // unary			-> ( "!" | "-" ) unary | call ;
 // call				-> primary ( "(" expression ( "," expression )* "}" | "." IDENTIFIER )* ;
-// primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | lambda | "true" | "false" | "nil" ;
+// primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | lambda | "this" | "true" | "false" | "nil" ;
 // lambda			-> "(" parameters ")" "->" statement ;
 // Parse is the entry point of Parser.
 func (p *Parser) Parse() ([]Stmt, bool) {
@@ -569,6 +569,8 @@ func (p *Parser) primary() Expr {
 		return NewVariable(p.previous())
 	case p.match(TokenFalse):
 		return NewLiteral(false)
+	case p.match(TokenThis):
+		return NewThis(p.previous())
 	case p.match(TokenTrue):
 		return NewLiteral(true)
 	case p.match(TokenNil):

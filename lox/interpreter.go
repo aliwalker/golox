@@ -6,6 +6,7 @@ import (
 	"github.com/fatih/color"
 )
 
+// Interpreter is an object interprets our AST.
 type Interpreter struct {
 	repl            bool         // REPL mode or not.
 	hadRuntimeError bool         // indicates runtime error.
@@ -14,6 +15,7 @@ type Interpreter struct {
 	locals          map[Expr]int // for local variable resolution.
 }
 
+// NewInterpreter returns an interpreter object.
 func NewInterpreter(repl bool) *Interpreter {
 	global := NewEnvironment(nil)
 	environment := global
@@ -74,7 +76,14 @@ func (i *Interpreter) VisitBlockStmt(stmt *Block) interface{} {
 
 func (i *Interpreter) VisitClassStmt(stmt *Class) interface{} {
 	i.environment.Define(stmt.Name.Lexeme, nil)
-	class := NewLoxClass(stmt.Name.Lexeme)
+
+	methods := map[string]*LoxFunction{}
+	for _, method := range stmt.Methods {
+		// no need to add another new env since we don't add it to current env.
+		methods[method.Name.Lexeme] = NewLoxFunction(method, i.environment)
+	}
+
+	class := NewLoxClass(stmt.Name.Lexeme, methods)
 	i.environment.Assign(stmt.Name, class)
 	return nil
 }
@@ -95,12 +104,14 @@ func (i *Interpreter) VisitExpressionStmt(stmt *Expression) interface{} {
 	return nil
 }
 
-// convert function ast node to runtime function object.
+// VisitFunctionStmt converts function ast node to runtime function object.
+// This function adds an entry to the current env, while methods in a class don't.
 func (i *Interpreter) VisitFunctionStmt(stmt *Function) interface{} {
 	i.environment.Define(stmt.Name.Lexeme, NewLoxFunction(stmt, i.environment))
 	return nil
 }
 
+// VisitIfStmt interpretes an if statement.
 func (i *Interpreter) VisitIfStmt(stmt *If) interface{} {
 	if truthy(i.evaluate(stmt.Condition)) {
 		i.execute(stmt.ThenBranch)
@@ -110,22 +121,12 @@ func (i *Interpreter) VisitIfStmt(stmt *If) interface{} {
 	return nil
 }
 
+// VisitPrintStmt prints an expression in Cyan color.
 func (i *Interpreter) VisitPrintStmt(stmt *Print) interface{} {
 	val := i.evaluate(stmt.Expression)
 	color.Cyan("%v", val)
 	return nil
 }
-
-/*
-func stringify(value interface{}) interface{} {
-	switch v := value.(type) {
-	case int, float64, string:
-		return v
-	case printable:
-		return v.String()
-	}
-	return value
-}*/
 
 func (i *Interpreter) VisitVarStmt(stmt *Var) interface{} {
 	var (
@@ -349,6 +350,10 @@ func (i *Interpreter) VisitSetExpr(expr *Set) interface{} {
 	value = i.evaluate(expr.Value)
 	loxInstance.Set(expr.Name, value)
 	return value
+}
+
+func (i *Interpreter) VisitThisExpr(expr *This) interface{} {
+	return i.lookUpVariable(expr, expr.Keyword)
 }
 
 func (i *Interpreter) VisitUnaryExpr(expr *Unary) interface{} {

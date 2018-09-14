@@ -208,6 +208,10 @@ func (p *AstPrinter) VisitSetExpr(expr *Set) interface{} {
 	return p.parenthesize("set", expr.Object, expr.Name, expr.Value)
 }
 
+func (p *AstPrinter) VisitThisExpr(expr *This) interface{} {
+	return "this"
+}
+
 func (p *AstPrinter) VisitUnaryExpr(expr *Unary) interface{} {
 	return p.parenthesize(expr.Operator.Lexeme, expr.Right)
 }
