@@ -11,6 +11,7 @@ const (
 	FuncNone
 	FuncFunc
 	FuncMeth
+	FuncGetter
 )
 
 // Resolver resolves bindings.
@@ -227,6 +228,10 @@ func (r *Resolver) VisitClassStmt(stmt *Class) interface{} {
 		r.resolveFunction(f, FuncMeth)
 	}
 
+	for _, g := range stmt.Getters {
+		r.resolveFunction(g, FuncGetter)
+	}
+
 	r.EndScope()
 	return nil
 }
@@ -250,6 +255,7 @@ func (r *Resolver) VisitControlStmt(stmt *Control) interface{} {
 }
 
 // VisitFunctionStmt resolves function declaration statement.
+// This function registers the name in current environment.
 func (r *Resolver) VisitFunctionStmt(stmt *Function) interface{} {
 	r.Declare(stmt.Name)
 	r.Define(stmt.Name)

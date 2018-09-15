@@ -95,11 +95,12 @@ func (p *Parser) synchronize() {
 }
 
 // program			-> declaration* EOF ;
-// declaration		-> varDeclaration | funDeclaration | classDeclaration ;
+// declaration		-> varDeclaration | funDeclaration | classDeclaration | getterDeclaration;
 // classDelaration	-> "class" IDENTIFIER "{" function* "}" ;
 // funDeclaration	-> "fun" function ;
 // function			-> IDENTIFIER "(" parameters? ")" block ;
 // parameters		-> IDENTIFIER ( "," IDENTIFIER )* ;
+// getterDeclaration -> "get" block ;
 // varDeclaration	-> "var" nameDeclaration ("," nameDeclaration)* ";"? ;
 // nameDeclaration	-> IDENTIFIER ( "=" expression ) ;
 // statement		-> block | expreStmt | printStmt | "break" ";"? | returnStmt ;
@@ -122,6 +123,7 @@ func (p *Parser) synchronize() {
 // call				-> primary ( "(" expression ( "," expression )* "}" | "." IDENTIFIER )* ;
 // primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | lambda | "this" | "true" | "false" | "nil" ;
 // lambda			-> "(" parameters ")" "->" statement ;
+
 // Parse is the entry point of Parser.
 func (p *Parser) Parse() ([]Stmt, bool) {
 	var stmts []Stmt
@@ -159,20 +161,23 @@ func (p *Parser) declaration() Stmt {
 func (p *Parser) classDeclaration() Stmt {
 	var className *Token
 	var functions = make([]*Function, 0)
+	var getters = make([]*Function, 0)
 
 	className = p.consume(TokenIdentifier, "expect class name to be an identifier.")
 	p.consume(TokenLeftBrace, "expect '{' after class name.")
 
 	for !p.check(TokenRightBrace) {
-		function, _ := p.function("method").(*Function)
-		functions = append(functions, function)
+		if p.match(TokenGetter) {
+			getter, _ := p.getter().(*Function)
+			getters = append(getters, getter)
+		} else {
+			function, _ := p.function("method").(*Function)
+			functions = append(functions, function)
+		}
 	}
 
 	p.consume(TokenRightBrace, "expect '}' after class declaration.")
-	if len(functions) != 0 {
-		return NewClass(className, functions)
-	}
-	return NewClass(className, nil)
+	return NewClass(className, functions, getters)
 }
 
 func (p *Parser) function(kind string) Stmt {
@@ -206,6 +211,14 @@ func (p *Parser) function(kind string) Stmt {
 	p.consume(TokenLeftBrace, "expect '{' before function body.")
 	body = p.block()
 	return NewFunction(name, params, body)
+}
+
+// We don't add a new type for  getter because it is a function in essence.
+func (p *Parser) getter() Stmt {
+	name := p.consume(TokenIdentifier, "expect identifier after 'get'")
+	p.consume(TokenLeftBrace, "expect '{' after identifier of getter.")
+	body := p.block()
+	return NewFunction(name, nil, body)
 }
 
 func (p *Parser) varDeclaration() Stmt {

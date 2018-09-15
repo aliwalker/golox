@@ -13,9 +13,9 @@ func NewLoxInstance(class *LoxClass) *LoxInstance {
 }
 
 // Get returns the requested field.
-func (o *LoxInstance) Get(name *Token) interface{} {
+// If the requested field is a getter, find the method, execute it and return the value.
+func (o *LoxInstance) Get(interpreter *Interpreter, name *Token) interface{} {
 	val, ok := o.props[name.Lexeme]
-
 	if ok {
 		return val
 	}
@@ -23,6 +23,12 @@ func (o *LoxInstance) Get(name *Token) interface{} {
 	val = o.class.FindMethod(o, name.Lexeme)
 	if val != nil {
 		return val
+	}
+
+	val = o.class.FindGetter(o, name.Lexeme)
+	if val != nil {
+		fn, _ := val.(*LoxFunction)
+		return fn.Call(interpreter, nil)
 	}
 	panic(NewRuntimeError(name, "undefined property."))
 }

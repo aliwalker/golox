@@ -28,6 +28,7 @@ var keywords = map[string]TokenType{
 	"false":  TokenFalse,
 	"for":    TokenFor,
 	"fun":    TokenFun,
+	"get":    TokenGetter,
 	"if":     TokenIf,
 	"nil":    TokenNil,
 	"or":     TokenOr,

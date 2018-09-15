@@ -58,6 +58,7 @@ const (
 	TokenElse
 	TokenFor
 	TokenFun
+	TokenGetter
 	TokenIf
 	TokenNil
 	TokenOr

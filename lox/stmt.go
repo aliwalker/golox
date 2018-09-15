@@ -31,10 +31,11 @@ func (expr *Block) Accept(v StmtVisitor) interface{} {
 type Class struct {
 	Name    *Token
 	Methods []*Function
+	Getters []*Function
 }
 
-func NewClass(name *Token, methods []*Function) Stmt {
-	return &Class{Name: name, Methods: methods}
+func NewClass(name *Token, methods []*Function, getters []*Function) Stmt {
+	return &Class{Name: name, Methods: methods, Getters: getters}
 }
 func (expr *Class) Accept(v StmtVisitor) interface{} {
 	return v.VisitClassStmt(expr)

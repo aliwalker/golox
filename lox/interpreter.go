@@ -83,7 +83,12 @@ func (i *Interpreter) VisitClassStmt(stmt *Class) interface{} {
 		methods[method.Name.Lexeme] = NewLoxFunction(method, i.environment)
 	}
 
-	class := NewLoxClass(stmt.Name.Lexeme, methods)
+	getters := map[string]*LoxFunction{}
+	for _, getter := range stmt.Getters {
+		getters[getter.Name.Lexeme] = NewLoxFunction(getter, i.environment)
+	}
+
+	class := NewLoxClass(stmt.Name.Lexeme, methods, getters)
 	i.environment.Assign(stmt.Name, class)
 	return nil
 }
@@ -302,7 +307,7 @@ func (i *Interpreter) VisitGetExpr(expr *Get) interface{} {
 	if ok != true {
 		panic(NewRuntimeError(expr.Name, "Only instance can have properties."))
 	}
-	return object.Get(expr.Name)
+	return object.Get(i, expr.Name)
 }
 
 func (i *Interpreter) VisitGroupingExpr(expr *Grouping) interface{} {
