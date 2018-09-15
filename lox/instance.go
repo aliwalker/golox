@@ -20,15 +20,14 @@ func (o *LoxInstance) Get(interpreter *Interpreter, name *Token) interface{} {
 		return val
 	}
 
-	val = o.class.FindMethod(o, name.Lexeme)
-	if val != nil {
-		return val
+	meth := o.class.FindMethod(o, name.Lexeme)
+	if meth != nil {
+		return meth
 	}
 
-	val = o.class.FindGetter(o, name.Lexeme)
-	if val != nil {
-		fn, _ := val.(*LoxFunction)
-		return fn.Call(interpreter, nil)
+	get := o.class.FindGetter(o, name.Lexeme)
+	if get != nil {
+		return get.Call(interpreter, nil)
 	}
 	panic(NewRuntimeError(name, "undefined property."))
 }

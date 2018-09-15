@@ -21,6 +21,7 @@ type Resolver struct {
 	curFunc     FuncType
 	inLoop      bool
 	inClass     bool
+	inInit      bool
 	hadError    bool
 }
 
@@ -32,6 +33,7 @@ func NewResolver(interpreter *Interpreter) *Resolver {
 		curFunc:     FuncNone,
 		inLoop:      false,
 		inClass:     false,
+		inInit:      false,
 		hadError:    false,
 	}
 }
@@ -225,7 +227,11 @@ func (r *Resolver) VisitClassStmt(stmt *Class) interface{} {
 	r.scopes.Peek()["this"] = varDefined
 
 	for _, f := range stmt.Methods {
+		if f.Name.Lexeme == "init" {
+			r.inInit = true
+		}
 		r.resolveFunction(f, FuncMeth)
+		r.inInit = false
 	}
 
 	for _, g := range stmt.Getters {
@@ -241,6 +247,10 @@ func (r *Resolver) VisitControlStmt(stmt *Control) interface{} {
 	if stmt.CtrlType == ControlReturn {
 		if r.curFunc == FuncNone {
 			panic(NewLoxError(stmt.Keyword, "illegal return statement."))
+		}
+
+		if r.inInit {
+			panic(NewLoxError(stmt.Keyword, "return must not be used in 'init'."))
 		}
 
 		if stmt.Value != nil {

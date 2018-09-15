@@ -13,34 +13,43 @@ func NewLoxClass(name string, methods, getters map[string]*LoxFunction) *LoxClas
 }
 
 // Arity returns the number of args the initializer takes.
-// TODO: add initializer.
 func (c *LoxClass) Arity() int {
+	initializer, ok := c.Methods["init"]
+	if ok {
+		return initializer.Arity()
+	}
 	return 0
 }
 
 // Call returns a LoxInstance. It's a factory.
 func (c *LoxClass) Call(i *Interpreter, args ...interface{}) interface{} {
-	return NewLoxInstance(c)
+	instance := NewLoxInstance(c)
+	initializer, ok := c.Methods["init"]
+
+	if ok {
+		initializer.Bind(instance).Call(i, args...)
+	}
+	return instance
 }
 
 // FindMethod returns the requested method.
-func (c *LoxClass) FindMethod(instance *LoxInstance, name string) interface{} {
+func (c *LoxClass) FindMethod(instance *LoxInstance, name string) *LoxFunction {
 	return findFunction(c.Methods, instance, name)
 }
 
 // FindGetter returns the requested getter.
-func (c *LoxClass) FindGetter(instance *LoxInstance, name string) interface{} {
+func (c *LoxClass) FindGetter(instance *LoxInstance, name string) *LoxFunction {
 	return findFunction(c.Getters, instance, name)
 }
 
-func findFunction(fields map[string]*LoxFunction, instance *LoxInstance, name string) interface{} {
+func findFunction(fields map[string]*LoxFunction, instance *LoxInstance, name string) *LoxFunction {
 	if fields == nil {
 		return nil
 	}
 
 	fn, ok := fields[name]
 	if ok {
-		return fn
+		return fn.Bind(instance)
 	}
 	return nil
 }

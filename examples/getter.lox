@@ -1,0 +1,12 @@
+class Student {
+    init(name) {
+        this._name = name
+    }
+    
+    get name {
+        return this._name
+    }
+}
+
+var s = Student("Allen")
+print s.name
