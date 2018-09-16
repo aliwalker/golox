@@ -32,10 +32,11 @@ type Class struct {
 	Name    *Token
 	Methods []*Function
 	Getters []*Function
+	Setters []*Function
 }
 
-func NewClass(name *Token, methods []*Function, getters []*Function) Stmt {
-	return &Class{Name: name, Methods: methods, Getters: getters}
+func NewClass(name *Token, methods []*Function, getters []*Function, setters []*Function) Stmt {
+	return &Class{Name: name, Methods: methods, Getters: getters, Setters: setters}
 }
 func (expr *Class) Accept(v StmtVisitor) interface{} {
 	return v.VisitClassStmt(expr)

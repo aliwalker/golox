@@ -79,7 +79,6 @@ func (i *Interpreter) VisitClassStmt(stmt *Class) interface{} {
 
 	methods := map[string]*LoxFunction{}
 	for _, method := range stmt.Methods {
-		// no need to add another new env since we don't add it to current env.
 		methods[method.Name.Lexeme] = NewLoxFunction(method, i.environment)
 	}
 
@@ -88,7 +87,12 @@ func (i *Interpreter) VisitClassStmt(stmt *Class) interface{} {
 		getters[getter.Name.Lexeme] = NewLoxFunction(getter, i.environment)
 	}
 
-	class := NewLoxClass(stmt.Name.Lexeme, methods, getters)
+	setters := map[string]*LoxFunction{}
+	for _, setter := range stmt.Setters {
+		setters[setter.Name.Lexeme] = NewLoxFunction(setter, i.environment)
+	}
+
+	class := NewLoxClass(stmt.Name.Lexeme, methods, getters, setters)
 	i.environment.Assign(stmt.Name, class)
 	return nil
 }
@@ -353,7 +357,7 @@ func (i *Interpreter) VisitSetExpr(expr *Set) interface{} {
 	}
 
 	value = i.evaluate(expr.Value)
-	loxInstance.Set(expr.Name, value)
+	loxInstance.Set(i, expr.Name, value)
 	return value
 }
 

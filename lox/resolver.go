@@ -12,6 +12,7 @@ const (
 	FuncFunc
 	FuncMeth
 	FuncGetter
+	FuncSetter
 )
 
 // Resolver resolves bindings.
@@ -238,6 +239,10 @@ func (r *Resolver) VisitClassStmt(stmt *Class) interface{} {
 		r.resolveFunction(g, FuncGetter)
 	}
 
+	for _, s := range stmt.Setters {
+		r.resolveFunction(s, FuncSetter)
+	}
+
 	r.EndScope()
 	return nil
 }
@@ -274,7 +279,7 @@ func (r *Resolver) VisitFunctionStmt(stmt *Function) interface{} {
 	return nil
 }
 
-// This function is used in resolving function and method.
+// resolveFunction resolves names in functions and methods.
 // `fType` is the passed from caller to indicate whether this is a method or a
 // function.
 func (r *Resolver) resolveFunction(function *Function, fType FuncType) {

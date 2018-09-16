@@ -63,6 +63,7 @@ const (
 	TokenNil
 	TokenOr
 	TokenReturn
+	TokenSetter
 	TokenSuper
 	TokenThis
 	TokenTrue

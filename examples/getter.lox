@@ -6,7 +6,14 @@ class Student {
     get name {
         return this._name
     }
+
+    set name(name) {
+        this._name = name
+    }
 }
 
 var s = Student("Allen")
+print s.name
+
+s.name = "Amber"
 print s.name

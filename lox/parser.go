@@ -95,12 +95,13 @@ func (p *Parser) synchronize() {
 }
 
 // program			-> declaration* EOF ;
-// declaration		-> varDeclaration | funDeclaration | classDeclaration | getterDeclaration;
-// classDelaration	-> "class" IDENTIFIER "{" function* "}" ;
+// declaration		-> varDeclaration | funDeclaration | classDeclaration ;
+// classDelaration	-> "class" IDENTIFIER "{" ( function | getter | setter )* "}" ;
+// getter			-> "get" block ;
+// setter			-> "set" "(" identifier ")" block ;
 // funDeclaration	-> "fun" function ;
 // function			-> IDENTIFIER "(" parameters? ")" block ;
 // parameters		-> IDENTIFIER ( "," IDENTIFIER )* ;
-// getterDeclaration -> "get" block ;
 // varDeclaration	-> "var" nameDeclaration ("," nameDeclaration)* ";"? ;
 // nameDeclaration	-> IDENTIFIER ( "=" expression ) ;
 // statement		-> block | expreStmt | printStmt | "break" ";"? | returnStmt ;
@@ -162,6 +163,7 @@ func (p *Parser) classDeclaration() Stmt {
 	var className *Token
 	var functions = make([]*Function, 0)
 	var getters = make([]*Function, 0)
+	var setters = make([]*Function, 0)
 
 	className = p.consume(TokenIdentifier, "expect class name to be an identifier.")
 	p.consume(TokenLeftBrace, "expect '{' after class name.")
@@ -170,6 +172,9 @@ func (p *Parser) classDeclaration() Stmt {
 		if p.match(TokenGetter) {
 			getter, _ := p.getter().(*Function)
 			getters = append(getters, getter)
+		} else if p.match(TokenSetter) {
+			setter, _ := p.setter().(*Function)
+			setters = append(setters, setter)
 		} else {
 			function, _ := p.function("method").(*Function)
 			functions = append(functions, function)
@@ -177,7 +182,34 @@ func (p *Parser) classDeclaration() Stmt {
 	}
 
 	p.consume(TokenRightBrace, "expect '}' after class declaration.")
-	return NewClass(className, functions, getters)
+	return NewClass(className, functions, getters, setters)
+}
+
+// we don't add a new type for  getter because it is a function in essence.
+func (p *Parser) getter() Stmt {
+	name := p.consume(TokenIdentifier, "expect identifier after 'get'")
+	p.consume(TokenLeftBrace, "expect '{' after identifier of getter.")
+	body := p.block()
+	return NewFunction(name, nil, body)
+}
+
+// same as getter.
+func (p *Parser) setter() Stmt {
+	var (
+		name  *Token // setter name.
+		param *Token // setter param.
+		body  []Stmt // setter body.
+	)
+
+	name = p.consume(TokenIdentifier, "expect identifier after 'set'")
+	p.consume(TokenLeftParen, "expect '(' after 'set <identifier>'.")
+
+	param = p.consume(TokenIdentifier, "expect only one parameter for setter.")
+	p.consume(TokenRightParen, "expect ')' after parameter.")
+	p.consume(TokenLeftBrace, "expect '{' before body.")
+
+	body = p.block()
+	return NewFunction(name, []*Token{param}, body)
 }
 
 func (p *Parser) function(kind string) Stmt {
@@ -211,14 +243,6 @@ func (p *Parser) function(kind string) Stmt {
 	p.consume(TokenLeftBrace, "expect '{' before function body.")
 	body = p.block()
 	return NewFunction(name, params, body)
-}
-
-// We don't add a new type for  getter because it is a function in essence.
-func (p *Parser) getter() Stmt {
-	name := p.consume(TokenIdentifier, "expect identifier after 'get'")
-	p.consume(TokenLeftBrace, "expect '{' after identifier of getter.")
-	body := p.block()
-	return NewFunction(name, nil, body)
 }
 
 func (p *Parser) varDeclaration() Stmt {
