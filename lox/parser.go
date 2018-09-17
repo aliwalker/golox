@@ -161,6 +161,7 @@ func (p *Parser) declaration() Stmt {
 
 func (p *Parser) classDeclaration() Stmt {
 	var className *Token
+	var statics = make([]*Function, 0)
 	var functions = make([]*Function, 0)
 	var getters = make([]*Function, 0)
 	var setters = make([]*Function, 0)
@@ -169,20 +170,24 @@ func (p *Parser) classDeclaration() Stmt {
 	p.consume(TokenLeftBrace, "expect '{' after class name.")
 
 	for !p.check(TokenRightBrace) {
-		if p.match(TokenGetter) {
+		switch {
+		case p.match(TokenGetter):
 			getter, _ := p.getter().(*Function)
 			getters = append(getters, getter)
-		} else if p.match(TokenSetter) {
+		case p.match(TokenSetter):
 			setter, _ := p.setter().(*Function)
 			setters = append(setters, setter)
-		} else {
+		case p.match(TokenStatic):
+			static := p.function("method").(*Function)
+			statics = append(statics, static)
+		default:
 			function, _ := p.function("method").(*Function)
 			functions = append(functions, function)
 		}
 	}
 
 	p.consume(TokenRightBrace, "expect '}' after class declaration.")
-	return NewClass(className, functions, getters, setters)
+	return NewClass(className, statics, functions, getters, setters)
 }
 
 // we don't add a new type for  getter because it is a function in essence.

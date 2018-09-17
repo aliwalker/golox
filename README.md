@@ -6,7 +6,7 @@ This implementation adds some more features:
 - [x] Semicolon is not a must. :-)
 - [x] Lambda expressions(anonymous functions).
 - [x] Support break statement from loops.
-- [ ] Support getters/setters, static methods for classes.
+- [x] Support getters/setters, static methods for classes.
 - [ ] Support `for ... of` statement.
 - [ ] Support Arrays, Maps.
 - [ ] Enhanced REPL.

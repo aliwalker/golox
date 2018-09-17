@@ -35,6 +35,7 @@ var keywords = map[string]TokenType{
 	"print":  TokenPrint,
 	"return": TokenReturn,
 	"set":    TokenSetter,
+	"static": TokenStatic,
 	"super":  TokenSuper,
 	"this":   TokenThis,
 	"true":   TokenTrue,

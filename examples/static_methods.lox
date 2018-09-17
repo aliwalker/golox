@@ -1,0 +1,9 @@
+class Comparator {
+    static ok(arg1, arg2) {
+        return arg1 < arg2
+    }
+}
+
+var a = 1
+var b = 2
+print Comparator.ok(a, b)

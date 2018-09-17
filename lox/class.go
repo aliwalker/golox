@@ -3,15 +3,20 @@ package lox
 // LoxClass is a runtime object for a lox class.
 type LoxClass struct {
 	Name    string
-	Methods map[string]*LoxFunction
-	Getters map[string]*LoxFunction // getters are function in essence.
-	Setters map[string]*LoxFunction
+	Statics map[string]*LoxFunction // static props or functions.
+	Methods map[string]*LoxFunction // class methods.
+	Getters map[string]*LoxFunction // getters are functions in essence.
+	Setters map[string]*LoxFunction // setters are functions in essence.
 }
 
 // NewLoxClass returns a runtime object for a class
-func NewLoxClass(name string, methods, getters, setters map[string]*LoxFunction) *LoxClass {
+func NewLoxClass(name string,
+	statics map[string]*LoxFunction,
+	methods, getters, setters map[string]*LoxFunction) *LoxClass {
+
 	return &LoxClass{
 		Name:    name,
+		Statics: statics,
 		Methods: methods,
 		Getters: getters,
 		Setters: setters,
@@ -20,8 +25,7 @@ func NewLoxClass(name string, methods, getters, setters map[string]*LoxFunction)
 
 // Arity returns the number of args the initializer takes.
 func (c *LoxClass) Arity() int {
-	initializer, ok := c.Methods["init"]
-	if ok {
+	if initializer, ok := c.Methods["init"]; ok {
 		return initializer.Arity()
 	}
 	return 0
@@ -30,12 +34,20 @@ func (c *LoxClass) Arity() int {
 // Call returns a LoxInstance. It's a factory.
 func (c *LoxClass) Call(i *Interpreter, args ...interface{}) interface{} {
 	instance := NewLoxInstance(c)
-	initializer, ok := c.Methods["init"]
 
-	if ok {
+	if initializer, ok := c.Methods["init"]; ok {
 		initializer.Bind(instance).Call(i, args...)
 	}
+
 	return instance
+}
+
+// FindStatic returns the requested static method of the class.
+func (c *LoxClass) FindStatic(name string) *LoxFunction {
+	if val, ok := c.Statics[name]; ok {
+		return val
+	}
+	return nil
 }
 
 // FindMethod returns a binded method.
@@ -59,10 +71,10 @@ func findFunction(fields map[string]*LoxFunction, instance *LoxInstance, name st
 		return nil
 	}
 
-	fn, ok := fields[name]
-	if ok {
+	if fn, ok := fields[name]; ok {
 		return fn.Bind(instance)
 	}
+
 	return nil
 }
 

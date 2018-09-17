@@ -30,13 +30,14 @@ func (expr *Block) Accept(v StmtVisitor) interface{} {
 
 type Class struct {
 	Name    *Token
+	Statics []*Function
 	Methods []*Function
 	Getters []*Function
 	Setters []*Function
 }
 
-func NewClass(name *Token, methods []*Function, getters []*Function, setters []*Function) Stmt {
-	return &Class{Name: name, Methods: methods, Getters: getters, Setters: setters}
+func NewClass(name *Token, statics []*Function, methods []*Function, getters []*Function, setters []*Function) Stmt {
+	return &Class{Name: name, Statics: statics, Methods: methods, Getters: getters, Setters: setters}
 }
 func (expr *Class) Accept(v StmtVisitor) interface{} {
 	return v.VisitClassStmt(expr)

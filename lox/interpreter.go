@@ -77,6 +77,11 @@ func (i *Interpreter) VisitBlockStmt(stmt *Block) interface{} {
 func (i *Interpreter) VisitClassStmt(stmt *Class) interface{} {
 	i.environment.Define(stmt.Name.Lexeme, nil)
 
+	statics := map[string]*LoxFunction{}
+	for _, static := range stmt.Statics {
+		statics[static.Name.Lexeme] = NewLoxFunction(static, i.environment)
+	}
+
 	methods := map[string]*LoxFunction{}
 	for _, method := range stmt.Methods {
 		methods[method.Name.Lexeme] = NewLoxFunction(method, i.environment)
@@ -92,7 +97,7 @@ func (i *Interpreter) VisitClassStmt(stmt *Class) interface{} {
 		setters[setter.Name.Lexeme] = NewLoxFunction(setter, i.environment)
 	}
 
-	class := NewLoxClass(stmt.Name.Lexeme, methods, getters, setters)
+	class := NewLoxClass(stmt.Name.Lexeme, statics, methods, getters, setters)
 	i.environment.Assign(stmt.Name, class)
 	return nil
 }
@@ -306,12 +311,15 @@ func (i *Interpreter) VisitCallExpr(expr *Call) interface{} {
 }
 
 func (i *Interpreter) VisitGetExpr(expr *Get) interface{} {
-	object, ok := i.evaluate(expr.Object).(*LoxInstance)
-
-	if ok != true {
-		panic(NewRuntimeError(expr.Name, "Only instance can have properties."))
+	if object, ok := i.evaluate(expr.Object).(*LoxInstance); ok {
+		return object.Get(i, expr.Name)
 	}
-	return object.Get(i, expr.Name)
+
+	if class, ok := i.evaluate(expr.Object).(*LoxClass); ok {
+		return class.FindStatic(expr.Name.Lexeme)
+	}
+
+	panic(NewRuntimeError(expr.Name, "unexpected property access."))
 }
 
 func (i *Interpreter) VisitGroupingExpr(expr *Grouping) interface{} {

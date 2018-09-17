@@ -4,7 +4,7 @@ package lox
 type ControlType int
 
 const (
-	_ ControlType = iota
-	ControlReturn
-	ControlBreak
+	_             ControlType = iota
+	ControlReturn             // return control
+	ControlBreak              // break control
 )

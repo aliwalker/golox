@@ -64,6 +64,7 @@ const (
 	TokenOr
 	TokenReturn
 	TokenSetter
+	TokenStatic
 	TokenSuper
 	TokenThis
 	TokenTrue

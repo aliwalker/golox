@@ -225,6 +225,11 @@ func (r *Resolver) VisitClassStmt(stmt *Class) interface{} {
 	// Since we added "this", we need another layer between the scope containing the class
 	// and the method scope.
 	r.BeginScope()
+	// before "this" is defined.
+	for _, f := range stmt.Statics {
+		r.resolveFunction(f, FuncMeth)
+	}
+
 	r.scopes.Peek()["this"] = varDefined
 
 	for _, f := range stmt.Methods {
