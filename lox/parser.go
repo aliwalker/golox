@@ -96,7 +96,7 @@ func (p *Parser) synchronize() {
 
 // program			-> declaration* EOF ;
 // declaration		-> varDeclaration | funDeclaration | classDeclaration ;
-// classDelaration	-> "class" IDENTIFIER "{" ( function | getter | setter )* "}" ;
+// classDelaration	-> "class" IDENTIFIER ( "<" identifier )? "{" ( function | getter | setter )* "}" ;
 // getter			-> "get" block ;
 // setter			-> "set" "(" identifier ")" block ;
 // funDeclaration	-> "fun" function ;
@@ -122,7 +122,7 @@ func (p *Parser) synchronize() {
 // multiplication 	-> unary ( ( "*" | "/" | "%" ) unary )* ;
 // unary			-> ( "!" | "-" ) unary | call ;
 // call				-> primary ( "(" expression ( "," expression )* "}" | "." IDENTIFIER )* ;
-// primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | lambda | "this" | "true" | "false" | "nil" ;
+// primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | lambda | "super" "." identifier | "this" | "true" | "false" | "nil" ;
 // lambda			-> "(" parameters ")" "->" statement ;
 
 // Parse is the entry point of Parser.
@@ -161,12 +161,19 @@ func (p *Parser) declaration() Stmt {
 
 func (p *Parser) classDeclaration() Stmt {
 	var className *Token
+	var super *Variable
 	var statics = make([]*Function, 0)
 	var functions = make([]*Function, 0)
 	var getters = make([]*Function, 0)
 	var setters = make([]*Function, 0)
 
 	className = p.consume(TokenIdentifier, "expect class name to be an identifier.")
+
+	if p.match(TokenLess) {
+		superName := p.consume(TokenIdentifier, "expect superclass name.")
+		super, _ = NewVariable(superName).(*Variable)
+	}
+
 	p.consume(TokenLeftBrace, "expect '{' after class name.")
 
 	for !p.check(TokenRightBrace) {
@@ -187,7 +194,7 @@ func (p *Parser) classDeclaration() Stmt {
 	}
 
 	p.consume(TokenRightBrace, "expect '}' after class declaration.")
-	return NewClass(className, statics, functions, getters, setters)
+	return NewClass(className, super, statics, functions, getters, setters)
 }
 
 // we don't add a new type for  getter because it is a function in essence.
@@ -646,6 +653,11 @@ func (p *Parser) primary() Expr {
 		expr := p.expression()
 		p.consume(TokenRightParen, "expect ')' after expression.")
 		return NewGrouping(expr)
+	case p.match(TokenSuper):
+		keyword := p.previous()
+		p.consume(TokenDot, "expect '.' after 'super'.")
+		method := p.consume(TokenIdentifier, "expect superclass method name.")
+		return NewSuper(keyword, method)
 	default:
 		panic(NewLoxError(p.peek(), "expect expression."))
 	}

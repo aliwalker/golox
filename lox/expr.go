@@ -10,6 +10,7 @@ type ExprVisitor interface {
 	VisitLiteralExpr(expr *Literal) interface{}
 	VisitLogicalExpr(expr *Logical) interface{}
 	VisitSetExpr(expr *Set) interface{}
+	VisitSuperExpr(expr *Super) interface{}
 	VisitThisExpr(expr *This) interface{}
 	VisitUnaryExpr(expr *Unary) interface{}
 	VisitVariableExpr(expr *Variable) interface{}
@@ -127,6 +128,18 @@ func NewSet(object Expr, name *Token, value Expr) Expr {
 }
 func (expr *Set) Accept(v ExprVisitor) interface{} {
 	return v.VisitSetExpr(expr)
+}
+
+type Super struct {
+	Keyword *Token
+	Method  *Token
+}
+
+func NewSuper(keyword *Token, method *Token) Expr {
+	return &Super{Keyword: keyword, Method: method}
+}
+func (expr *Super) Accept(v ExprVisitor) interface{} {
+	return v.VisitSuperExpr(expr)
 }
 
 type This struct {

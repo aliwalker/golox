@@ -31,8 +31,9 @@ func (e *Environment) Get(name *Token) interface{} {
 }
 
 // GetAt gets the value of `name` from the the calling env's `distance` ancestor.
-func (e *Environment) GetAt(distance int, name *Token) interface{} {
-	return e.ancestor(distance).Get(name)
+// The caller must've ensured the requested `name` could be found in that ancestor.
+func (e *Environment) GetAt(distance int, name string) interface{} {
+	return e.ancestor(distance).values[name]
 }
 
 func (e *Environment) ancestor(distance int) *Environment {

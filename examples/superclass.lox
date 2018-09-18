@@ -1,0 +1,15 @@
+class Animal {
+    intro() {
+        print "an animal"
+    }
+}
+
+class Dog < Animal {
+    intro() {
+        print "I'm a dog, I'm "
+        super.intro()
+    }
+}
+
+var dog = Dog()
+dog.intro()

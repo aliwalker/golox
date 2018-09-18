@@ -30,6 +30,7 @@ func main() {
 		"Literal	: Value interface{}",
 		"Logical	: Left Expr, Operator *Token, Right Expr",
 		"Set		: Object Expr, Name *Token, Value Expr",
+		"Super		: Keyword *Token, Method *Token",
 		"This		: Keyword *Token",
 		"Unary		: Operator *Token, Right Expr",
 		"Variable	: Name *Token",
@@ -37,7 +38,7 @@ func main() {
 
 	defineAst(out, "Stmt", []string{
 		"Block		: Stmts []Stmt",
-		"Class		: Name *Token, Statics []*Function, Methods []*Function, Getters []*Function, Setters []*Function",
+		"Class		: Name *Token, Super *Variable, Statics []*Function, Methods []*Function, Getters []*Function, Setters []*Function",
 		"Control	: Keyword *Token, CtrlType ControlType, Value Expr",
 		"Function	: Name *Token, Params []*Token, Body []Stmt",
 		"Expression	: Expression Expr",

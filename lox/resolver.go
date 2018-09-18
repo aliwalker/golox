@@ -22,6 +22,7 @@ type Resolver struct {
 	curFunc     FuncType
 	inLoop      bool
 	inClass     bool
+	inSubClass  bool
 	inInit      bool
 	hadError    bool
 }
@@ -34,6 +35,7 @@ func NewResolver(interpreter *Interpreter) *Resolver {
 		curFunc:     FuncNone,
 		inLoop:      false,
 		inClass:     false,
+		inSubClass:  false,
 		inInit:      false,
 		hadError:    false,
 	}
@@ -179,7 +181,17 @@ func (r *Resolver) VisitSetExpr(expr *Set) interface{} {
 	return nil
 }
 
-// VisitThisExpr resolves "this"
+// VisitSuperExpr binds super keyword.
+func (r *Resolver) VisitSuperExpr(expr *Super) interface{} {
+	if r.inSubClass != true || r.inClass != true {
+		panic(NewLoxError(expr.Keyword, "invalid use of 'super'."))
+	}
+
+	r.resolveLocal(expr, expr.Keyword)
+	return nil
+}
+
+// VisitThisExpr binds "this"
 func (r *Resolver) VisitThisExpr(expr *This) interface{} {
 	if !r.inClass {
 		panic(NewLoxError(expr.Keyword, "\"this\" in non-class function."))
@@ -213,14 +225,29 @@ func (r *Resolver) VisitBlockStmt(stmt *Block) interface{} {
 }
 
 func (r *Resolver) VisitClassStmt(stmt *Class) interface{} {
-	r.Declare(stmt.Name)
-	r.Define(stmt.Name)
-	r.inClass = true
-	preClass := r.inClass
+	inClass := r.inClass
+	inSubClass := r.inSubClass
 
 	defer func() {
-		r.inClass = preClass
+		r.inClass = inClass
+		r.inSubClass = inSubClass
 	}()
+
+	r.inClass = true
+	r.Declare(stmt.Name)
+
+	if stmt.Super != nil {
+		r.inSubClass = true
+		r.resolve(stmt.Super)
+	}
+
+	r.Define(stmt.Name)
+
+	if stmt.Super != nil {
+		// add another scope for storing "super".
+		r.BeginScope()
+		r.scopes.Peek()["super"] = varDefined
+	}
 
 	// Since we added "this", we need another layer between the scope containing the class
 	// and the method scope.
@@ -249,6 +276,11 @@ func (r *Resolver) VisitClassStmt(stmt *Class) interface{} {
 	}
 
 	r.EndScope()
+
+	if stmt.Super != nil {
+		r.EndScope()
+	}
+
 	return nil
 }
 

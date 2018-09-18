@@ -75,7 +75,23 @@ func (i *Interpreter) VisitBlockStmt(stmt *Block) interface{} {
 }
 
 func (i *Interpreter) VisitClassStmt(stmt *Class) interface{} {
+	// evaluate the super class first.
+	var superClass *LoxClass
+	if stmt.Super != nil {
+		var ok bool
+		super := i.evaluate(stmt.Super)
+		if superClass, ok = super.(*LoxClass); ok != true {
+			panic(NewRuntimeError(stmt.Super.Name, "superclass must be a class."))
+		}
+	}
+
 	i.environment.Define(stmt.Name.Lexeme, nil)
+
+	if stmt.Super != nil {
+		// add another scope for "super".
+		i.environment = NewEnvironment(i.environment)
+		i.environment.Define("super", superClass)
+	}
 
 	statics := map[string]*LoxFunction{}
 	for _, static := range stmt.Statics {
@@ -97,7 +113,14 @@ func (i *Interpreter) VisitClassStmt(stmt *Class) interface{} {
 		setters[setter.Name.Lexeme] = NewLoxFunction(setter, i.environment)
 	}
 
-	class := NewLoxClass(stmt.Name.Lexeme, statics, methods, getters, setters)
+	class := NewLoxClass(stmt.Name.Lexeme, superClass, statics, methods, getters, setters)
+
+	if stmt.Super != nil {
+		// remember to exist the scope created previously,
+		// before assigning the current class to current env.
+		i.environment = i.environment.enclosing
+	}
+
 	i.environment.Assign(stmt.Name, class)
 	return nil
 }
@@ -369,6 +392,23 @@ func (i *Interpreter) VisitSetExpr(expr *Set) interface{} {
 	return value
 }
 
+// VisitSuperExpr interpretes something like "super.foo"
+func (i *Interpreter) VisitSuperExpr(expr *Super) interface{} {
+	distance := i.locals[expr]
+	superClass, _ := i.environment.GetAt(distance, "super").(*LoxClass)
+	// the context for the method queryed. This is a little hack since we've known
+	// it is there, and we've known it must be a LoxInstance.
+	object, _ := i.environment.GetAt(distance-1, "this").(*LoxInstance)
+	// TODO: add getter/setter inheritance support.
+	method := superClass.FindMethod(object, expr.Method.Lexeme)
+
+	if method == nil {
+		panic(NewRuntimeError(expr.Method, "undefined property '"+expr.Method.Lexeme+"'."))
+	}
+
+	return method
+}
+
 func (i *Interpreter) VisitThisExpr(expr *This) interface{} {
 	return i.lookUpVariable(expr, expr.Keyword)
 }
@@ -425,9 +465,8 @@ func equal(left, right interface{}) bool {
 }
 
 func (i *Interpreter) lookUpVariable(expr Expr, name *Token) interface{} {
-	distance, ok := i.locals[expr]
-	if ok {
-		return i.environment.GetAt(distance, name)
+	if distance, ok := i.locals[expr]; ok {
+		return i.environment.GetAt(distance, name.Lexeme)
 	}
 	return i.global.Get(name)
 }
