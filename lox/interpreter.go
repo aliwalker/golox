@@ -20,6 +20,9 @@ func NewInterpreter(repl bool) *Interpreter {
 	global := NewEnvironment(nil)
 	environment := global
 
+	initArray()
+	global.Define("Array", LoxArray)
+
 	return &Interpreter{
 		repl:            repl,
 		hadRuntimeError: false,
@@ -93,22 +96,22 @@ func (i *Interpreter) VisitClassStmt(stmt *Class) interface{} {
 		i.environment.Define("super", superClass)
 	}
 
-	statics := map[string]*LoxFunction{}
+	statics := map[string]Callable{}
 	for _, static := range stmt.Statics {
 		statics[static.Name.Lexeme] = NewLoxFunction(static, i.environment)
 	}
 
-	methods := map[string]*LoxFunction{}
+	methods := map[string]Callable{}
 	for _, method := range stmt.Methods {
 		methods[method.Name.Lexeme] = NewLoxFunction(method, i.environment)
 	}
 
-	getters := map[string]*LoxFunction{}
+	getters := map[string]Callable{}
 	for _, getter := range stmt.Getters {
 		getters[getter.Name.Lexeme] = NewLoxFunction(getter, i.environment)
 	}
 
-	setters := map[string]*LoxFunction{}
+	setters := map[string]Callable{}
 	for _, setter := range stmt.Setters {
 		setters[setter.Name.Lexeme] = NewLoxFunction(setter, i.environment)
 	}
@@ -321,7 +324,8 @@ func (i *Interpreter) VisitCallExpr(expr *Call) interface{} {
 		panic(NewRuntimeError(expr.Paren, "callee is not callable."))
 	}
 
-	if len(expr.Arguments) != function.Arity() {
+	// if it is -1, we don't check it.
+	if len(expr.Arguments) != function.Arity() && function.Arity() != -1 {
 		panic(NewRuntimeError(expr.Paren, fmt.Sprintf("expect %v arguments, but got %v", function.Arity(), len(expr.Arguments))))
 	}
 

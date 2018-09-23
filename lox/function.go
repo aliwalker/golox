@@ -17,7 +17,7 @@ func (f *LoxFunction) Arity() int {
 }
 
 // Bind adds a new scope containing "this", which is bound to the given LoxInstance.
-func (f *LoxFunction) Bind(instance *LoxInstance) *LoxFunction {
+func (f *LoxFunction) Bind(instance *LoxInstance) Callable {
 	env := NewEnvironment(f.Enclosing)
 	env.Define("this", instance)
 	return NewLoxFunction(f.Declaration, env)

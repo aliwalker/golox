@@ -4,17 +4,17 @@ package lox
 type LoxClass struct {
 	Name    string
 	Super   *LoxClass
-	Statics map[string]*LoxFunction // static props or functions.
-	Methods map[string]*LoxFunction // class methods.
-	Getters map[string]*LoxFunction // getters are functions in essence.
-	Setters map[string]*LoxFunction // setters are functions in essence.
+	Statics map[string]Callable // static props or functions.
+	Methods map[string]Callable // class methods.
+	Getters map[string]Callable // getters are functions in essence.
+	Setters map[string]Callable // setters are functions in essence.
 }
 
 // NewLoxClass returns a runtime object for a class
 func NewLoxClass(name string,
 	super *LoxClass,
-	statics map[string]*LoxFunction,
-	methods, getters, setters map[string]*LoxFunction) *LoxClass {
+	statics,
+	methods, getters, setters map[string]Callable) *LoxClass {
 
 	return &LoxClass{
 		Name:    name,
@@ -34,11 +34,16 @@ func (c *LoxClass) Arity() int {
 	return 0
 }
 
+func (c *LoxClass) Bind(instance *LoxInstance) Callable {
+	panic(NewRuntimeError(nil, "unable to bind a Lox class!"))
+}
+
 // Call returns a LoxInstance. It's a factory.
 func (c *LoxClass) Call(i *Interpreter, args ...interface{}) interface{} {
 	instance := NewLoxInstance(c)
 
-	if initializer, ok := c.Methods["init"]; ok {
+	if init, ok := c.Methods["init"]; ok {
+		initializer, _ := init.(Callable)
 		initializer.Bind(instance).Call(i, args...)
 	}
 
@@ -46,7 +51,7 @@ func (c *LoxClass) Call(i *Interpreter, args ...interface{}) interface{} {
 }
 
 // FindStatic returns the requested static method of the class.
-func (c *LoxClass) FindStatic(name string) *LoxFunction {
+func (c *LoxClass) FindStatic(name string) Callable {
 	if val, ok := c.Statics[name]; ok {
 		return val
 	}
@@ -56,7 +61,7 @@ func (c *LoxClass) FindStatic(name string) *LoxFunction {
 // TODO: fix Find...
 
 // FindMethod returns a binded method.
-func (c *LoxClass) FindMethod(instance *LoxInstance, name string) *LoxFunction {
+func (c *LoxClass) FindMethod(instance *LoxInstance, name string) Callable {
 	if fn := findFunction(c.Methods, instance, name); fn != nil {
 		return fn
 	}
@@ -69,7 +74,7 @@ func (c *LoxClass) FindMethod(instance *LoxInstance, name string) *LoxFunction {
 }
 
 // FindGetter returns a binded getter.
-func (c *LoxClass) FindGetter(instance *LoxInstance, name string) *LoxFunction {
+func (c *LoxClass) FindGetter(instance *LoxInstance, name string) Callable {
 	if fn := findFunction(c.Getters, instance, name); fn != nil {
 		return fn
 	}
@@ -82,7 +87,7 @@ func (c *LoxClass) FindGetter(instance *LoxInstance, name string) *LoxFunction {
 }
 
 // FindSetter returns a binded setter.
-func (c *LoxClass) FindSetter(instance *LoxInstance, name string) *LoxFunction {
+func (c *LoxClass) FindSetter(instance *LoxInstance, name string) Callable {
 	if fn := findFunction(c.Setters, instance, name); fn != nil {
 		return fn
 	}
@@ -95,12 +100,13 @@ func (c *LoxClass) FindSetter(instance *LoxInstance, name string) *LoxFunction {
 }
 
 // findFunction finds a specific function, binds it to `instance` & returns the newly binded function.
-func findFunction(fields map[string]*LoxFunction, instance *LoxInstance, name string) *LoxFunction {
+func findFunction(fields map[string]Callable, instance *LoxInstance, name string) Callable {
 	if fields == nil {
 		return nil
 	}
 
-	if fn, ok := fields[name]; ok {
+	if f, ok := fields[name]; ok {
+		fn, _ := f.(Callable)
 		return fn.Bind(instance)
 	}
 
