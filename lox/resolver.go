@@ -182,7 +182,8 @@ func (r *Resolver) VisitSetExpr(expr *Set) interface{} {
 }
 
 func (r *Resolver) VisitSubscriptExpr(expr *Subscript) interface{} {
-	r.resolve(expr.ArrayObj)
+	r.resolve(expr.Object)
+	r.resolve(expr.Key)
 	return nil
 }
 

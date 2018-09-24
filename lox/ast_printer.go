@@ -209,7 +209,7 @@ func (p *AstPrinter) VisitSetExpr(expr *Set) interface{} {
 }
 
 func (p *AstPrinter) VisitSubscriptExpr(expr *Subscript) interface{} {
-	return p.parenthesize("subscript", expr.ArrayObj, expr.Index.Literal)
+	return p.parenthesize("subscript", expr.Object, expr.Key)
 }
 
 func (p *AstPrinter) VisitSuperExpr(expr *Super) interface{} {

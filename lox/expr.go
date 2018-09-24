@@ -132,12 +132,13 @@ func (expr *Set) Accept(v ExprVisitor) interface{} {
 }
 
 type Subscript struct {
-	ArrayObj Expr
-	Index    *Token
+	Object  Expr
+	Key     Expr
+	Bracket *Token
 }
 
-func NewSubscript(arrayobj Expr, index *Token) Expr {
-	return &Subscript{ArrayObj: arrayobj, Index: index}
+func NewSubscript(object Expr, key Expr, bracket *Token) Expr {
+	return &Subscript{Object: object, Key: key, Bracket: bracket}
 }
 func (expr *Subscript) Accept(v ExprVisitor) interface{} {
 	return v.VisitSubscriptExpr(expr)

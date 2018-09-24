@@ -391,23 +391,51 @@ func (i *Interpreter) VisitSetExpr(expr *Set) interface{} {
 		panic(NewRuntimeError(expr.Name, "set property on a non Lox instance object."))
 	}
 
+	// TODO: fix this fake token.
+	if expr.Name.Type == -1 {
+		name, _ := expr.Name.Literal.(Expr)
+		key := i.evaluate(name)
+		switch val := key.(type) {
+		case string:
+			// set a property of an object.
+			expr.Name.Lexeme = val
+		case int:
+			// access the array.
+			arrayObj, ok := i.evaluate(expr.Object).(*LoxInstance)
+			if ok != true || arrayObj.class.Name != "Array" {
+				panic(NewRuntimeError(expr.Name, "unexpected index access."))
+			}
+			list := arrayObj.props["list"].([]interface{})
+			list[val] = value
+		}
+	}
+
 	value = i.evaluate(expr.Value)
 	loxInstance.Set(i, expr.Name, value)
 	return value
 }
 
 func (i *Interpreter) VisitSubscriptExpr(expr *Subscript) interface{} {
-	object, ok := i.evaluate(expr.ArrayObj).(*LoxInstance)
+	object, ok := i.evaluate(expr.Object).(*LoxInstance)
 	if ok != true {
-		panic(NewRuntimeError(expr.Index, "unexpected subscript expression."))
+		panic(NewRuntimeError(expr.Bracket, "unexpected subscript expression."))
 	}
 
-	if object.class.Name != "Array" {
-		panic(NewRuntimeError(expr.Index, "unexpected subscript expression."))
+	key := i.evaluate(expr.Key)
+
+	if index, ok := key.(int); object.class.Name == "Array" && ok {
+		list, _ := object.props["list"].([]interface{})
+		return list[index]
 	}
-	list, _ := object.props["list"].([]interface{})
-	index := expr.Index.Literal.(int)
-	return list[index]
+	name, ok := key.(string)
+	if ok != true {
+		panic(NewRuntimeError(nil, "property name not stringified."))
+	}
+
+	if value, ok := object.props[name]; ok {
+		return value
+	}
+	panic(NewRuntimeError(nil, "no such property."))
 }
 
 // VisitSuperExpr interpretes something like "super.foo"

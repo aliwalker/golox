@@ -1,6 +1,8 @@
 var a = Array(1, 2, 3)
 
+a["foo"] = "bar"    // array is also an instance.
 a.append(4)
 print a[2]
+print a["foo"]
 print Array.isArray(a)
 print Array.isArray(1)

@@ -46,5 +46,13 @@ func (o *LoxInstance) Set(interpreter *Interpreter, name *Token, value interface
 }
 
 func (o *LoxInstance) String() string {
-	return o.class.String() + " instance"
+	stringfied := "[" + o.class.String() + " instance" + "] {\n"
+
+	for name, value := range o.props {
+		valueStr, _ := value.(string)
+		stringfied += "\t" + name + ": " + valueStr + "\n"
+	}
+
+	stringfied += "}"
+	return stringfied
 }

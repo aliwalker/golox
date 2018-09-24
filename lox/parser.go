@@ -113,7 +113,8 @@ func (p *Parser) synchronize() {
 // returnStmt		-> "return" expression? ";"? ;
 // WhileStmt		-> "while" "(" expression ")" statement
 // expression		-> assignment ;
-// asignment		-> ( call "." )? identifier ( "=" | "+=" | "-=" | "*=" | "/=" ) expression | logical_or ;
+// asignment		-> ( call "." )? identifier ( "[" exression "]" )? assignmentOp expression | logical_or ;
+// assignmentOp		-> "=" | "+=" | "-=" | "*=" | "/=" ;
 // logical_or		-> logical_and ( "or" logical_and )* ;
 // logical_and		-> equality ( "and" equality )* ;
 // equality			-> comparison ( ( "==" | "!=" ) comparison )* ;
@@ -121,7 +122,7 @@ func (p *Parser) synchronize() {
 // addition			-> multiplication ( ( "+" | "-" ) multiplication )* ;
 // multiplication 	-> unary ( ( "*" | "/" | "%" ) unary )* ;
 // unary			-> ( "!" | "-" ) unary | call ;
-// call				-> primary ( "(" expression ( "," expression )* "}" | "." IDENTIFIER | "[" NUMBER "]" )* ;
+// call				-> primary ( "(" expression ( "," expression )* "}" | "." IDENTIFIER | "[" expression "]" )* ;
 // primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | lambda | "super" "." identifier | "this" | "true" | "false" | "nil" ;
 // lambda			-> "(" parameters ")" "->" statement ;
 
@@ -341,23 +342,7 @@ func (p *Parser) block() []Stmt {
 	return stmts
 }
 
-/*
- for statement is a syntax sugar for while statement.
-
- 		for (var i = 0; i < 10; i = i + 1) {
- 				print i;
- 		}
-
- will be translated into
-
-		{
-			var i = 0;
-			while (i < 10) {
-				print i;
-				i = i + 1
-			}
-		}
-*/
+// desugaring.
 func (p *Parser) forStmt() Stmt {
 	var (
 		forBlock    Stmt
@@ -482,8 +467,11 @@ func (p *Parser) assignment() Expr {
 			return NewAssign(name, operator, value)
 		} else if getExpr, ok := expr.(*Get); ok {
 			return NewSet(getExpr.Object, getExpr.Name, value)
+		} else if subscript, ok := expr.(*Subscript); ok {
+			// TODO: fix fake token.
+			keyToken := NewToken(-1, "", subscript.Key, -1)
+			return NewSet(subscript.Object, keyToken, value)
 		}
-
 		errmsg := "invalid assign target."
 		panic(NewLoxError(operator, errmsg))
 	}
@@ -590,10 +578,10 @@ func (p *Parser) call() Expr {
 			name := p.consume(TokenIdentifier, "expect a property name.")
 			expr = NewGet(expr, name)
 		} else if p.check(TokenLeftBracket) {
-			p.advance()
-			index := p.consume(TokenNumber, "expect an integer as index!")
+			bracket := p.advance()
+			key := p.expression()
 			p.consume(TokenRightBracket, "expect ']' after index.")
-			expr = NewSubscript(expr, index)
+			expr = NewSubscript(expr, key, bracket)
 		} else {
 			break
 		}
