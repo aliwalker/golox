@@ -121,7 +121,7 @@ func (p *Parser) synchronize() {
 // addition			-> multiplication ( ( "+" | "-" ) multiplication )* ;
 // multiplication 	-> unary ( ( "*" | "/" | "%" ) unary )* ;
 // unary			-> ( "!" | "-" ) unary | call ;
-// call				-> primary ( "(" expression ( "," expression )* "}" | "." IDENTIFIER )* ;
+// call				-> primary ( "(" expression ( "," expression )* "}" | "." IDENTIFIER | "[" NUMBER "]" )* ;
 // primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | lambda | "super" "." identifier | "this" | "true" | "false" | "nil" ;
 // lambda			-> "(" parameters ")" "->" statement ;
 
@@ -589,6 +589,11 @@ func (p *Parser) call() Expr {
 			p.advance()
 			name := p.consume(TokenIdentifier, "expect a property name.")
 			expr = NewGet(expr, name)
+		} else if p.check(TokenLeftBracket) {
+			p.advance()
+			index := p.consume(TokenNumber, "expect an integer as index!")
+			p.consume(TokenRightBracket, "expect ']' after index.")
+			expr = NewSubscript(expr, index)
 		} else {
 			break
 		}

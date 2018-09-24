@@ -181,6 +181,11 @@ func (r *Resolver) VisitSetExpr(expr *Set) interface{} {
 	return nil
 }
 
+func (r *Resolver) VisitSubscriptExpr(expr *Subscript) interface{} {
+	r.resolve(expr.ArrayObj)
+	return nil
+}
+
 // VisitSuperExpr binds super keyword.
 func (r *Resolver) VisitSuperExpr(expr *Super) interface{} {
 	if r.inSubClass != true || r.inClass != true {

@@ -87,6 +87,10 @@ func (s *Scanner) scanToken() {
 		s.addToken(TokenLeftBrace, nil)
 	case '}':
 		s.addToken(TokenRightBrace, nil)
+	case '[':
+		s.addToken(TokenLeftBracket, nil)
+	case ']':
+		s.addToken(TokenRightBracket, nil)
 	case '.':
 		s.addToken(TokenDot, nil)
 	case ',':

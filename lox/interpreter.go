@@ -396,6 +396,20 @@ func (i *Interpreter) VisitSetExpr(expr *Set) interface{} {
 	return value
 }
 
+func (i *Interpreter) VisitSubscriptExpr(expr *Subscript) interface{} {
+	object, ok := i.evaluate(expr.ArrayObj).(*LoxInstance)
+	if ok != true {
+		panic(NewRuntimeError(expr.Index, "unexpected subscript expression."))
+	}
+
+	if object.class.Name != "Array" {
+		panic(NewRuntimeError(expr.Index, "unexpected subscript expression."))
+	}
+	list, _ := object.props["list"].([]interface{})
+	index := expr.Index.Literal.(int)
+	return list[index]
+}
+
 // VisitSuperExpr interpretes something like "super.foo"
 func (i *Interpreter) VisitSuperExpr(expr *Super) interface{} {
 	distance := i.locals[expr]

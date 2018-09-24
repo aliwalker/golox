@@ -15,6 +15,8 @@ const (
 	TokenRightParen
 	TokenLeftBrace
 	TokenRightBrace
+	TokenLeftBracket
+	TokenRightBracket
 	TokenComma
 	TokenDot
 	TokenMinus
