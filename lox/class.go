@@ -44,7 +44,10 @@ func (c *LoxClass) Call(i *Interpreter, args ...interface{}) interface{} {
 
 	if init, ok := c.Methods["init"]; ok {
 		initializer, _ := init.(Callable)
-		initializer.Bind(instance).Call(i, args...)
+		// NOTE: this is another hack.
+		if ins := initializer.Bind(instance).Call(i, args...); ins != nil {
+			return ins
+		}
 	}
 
 	return instance

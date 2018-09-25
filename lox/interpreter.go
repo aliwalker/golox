@@ -338,7 +338,7 @@ func (i *Interpreter) VisitCallExpr(expr *Call) interface{} {
 }
 
 func (i *Interpreter) VisitGetExpr(expr *Get) interface{} {
-	if object, ok := i.evaluate(expr.Object).(*LoxInstance); ok {
+	if object, ok := i.evaluate(expr.Object).(ObjectType); ok {
 		return object.Get(i, expr.Name)
 	}
 
