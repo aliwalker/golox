@@ -123,7 +123,9 @@ func (p *Parser) synchronize() {
 // multiplication 	-> unary ( ( "*" | "/" | "%" ) unary )* ;
 // unary			-> ( "!" | "-" ) unary | call ;
 // call				-> primary ( "(" expression ( "," expression )* "}" | "." IDENTIFIER | "[" expression "]" )* ;
-// primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | lambda | "super" "." identifier | "this" | "true" | "false" | "nil" ;
+// primary 			-> IDENTIFIER | NUMBER | STRING | "(" expression ")" | arrayliteral
+//						| lambda | "super" "." identifier | "this" | "true" | "false" | "nil" ;
+// arrayliteral		-> "[" expr ("," expr)* "]" ;
 // lambda			-> "(" parameters ")" "->" statement ;
 
 // Parse is the entry point of Parser.
@@ -646,6 +648,18 @@ func (p *Parser) primary() Expr {
 		expr := p.expression()
 		p.consume(TokenRightParen, "expect ')' after expression.")
 		return NewGrouping(expr)
+	case p.match(TokenLeftBracket):
+		// array literal.
+		elements := make([]Expr, 0)
+		for !p.check(TokenRightBracket) {
+			expr := p.expression()
+			if !p.check(TokenRightBracket) {
+				p.consume(TokenComma, "expect ',' to separate elements.")
+			}
+			elements = append(elements, expr)
+		}
+		p.consume(TokenRightBracket, "expect ']' after array elements.")
+		return NewArray(elements)
 	case p.match(TokenSuper):
 		keyword := p.previous()
 		p.consume(TokenDot, "expect '.' after 'super'.")

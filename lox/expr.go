@@ -2,6 +2,7 @@ package lox
 
 type ExprVisitor interface {
 	VisitAssignExpr(expr *Assign) interface{}
+	VisitArrayExpr(expr *Array) interface{}
 	VisitBinaryExpr(expr *Binary) interface{}
 	VisitCallExpr(expr *Call) interface{}
 	VisitGetExpr(expr *Get) interface{}
@@ -32,6 +33,17 @@ func NewAssign(name *Token, operator *Token, value Expr) Expr {
 }
 func (expr *Assign) Accept(v ExprVisitor) interface{} {
 	return v.VisitAssignExpr(expr)
+}
+
+type Array struct {
+	Elements []Expr
+}
+
+func NewArray(elements []Expr) Expr {
+	return &Array{Elements: elements}
+}
+func (expr *Array) Accept(v ExprVisitor) interface{} {
+	return v.VisitArrayExpr(expr)
 }
 
 type Binary struct {

@@ -22,6 +22,7 @@ func main() {
 
 	defineAst(out, "Expr", []string{
 		"Assign		: Name *Token, Operator *Token, Value Expr",
+		"Array		: Elements []Expr",
 		"Binary		: Left Expr, Operator *Token, Right Expr",
 		"Call		: Callee Expr, Paren *Token, Arguments []Expr",
 		"Get		: Object Expr, Name *Token",

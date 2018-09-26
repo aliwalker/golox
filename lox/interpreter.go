@@ -216,6 +216,15 @@ func (i *Interpreter) VisitWhileStmt(stmt *While) interface{} {
 	return nil
 }
 
+func (i *Interpreter) VisitArrayExpr(expr *Array) interface{} {
+	elemValues := make([]interface{}, 0)
+	for _, elem := range expr.Elements {
+		value := i.evaluate(elem)
+		elemValues = append(elemValues, value)
+	}
+	return LoxArray.Call(i, elemValues...)
+}
+
 func (i *Interpreter) VisitAssignExpr(expr *Assign) interface{} {
 	var operator TokenType
 
@@ -380,14 +389,14 @@ func (i *Interpreter) VisitLogicalExpr(expr *Logical) interface{} {
 
 func (i *Interpreter) VisitSetExpr(expr *Set) interface{} {
 	var (
-		loxInstance *LoxInstance
+		loxInstance ObjectType
 		value       interface{}
 		ok          bool
 	)
 
 	value = i.evaluate(expr.Object)
 
-	if loxInstance, ok = value.(*LoxInstance); ok != true {
+	if loxInstance, ok = value.(ObjectType); ok != true {
 		panic(NewRuntimeError(expr.Name, "set property on a non Lox instance object."))
 	}
 
@@ -401,8 +410,8 @@ func (i *Interpreter) VisitSetExpr(expr *Set) interface{} {
 			expr.Name.Lexeme = val
 		case int:
 			// access the array.
-			arrayObj, ok := i.evaluate(expr.Object).(*LoxInstance)
-			if ok != true || arrayObj.class.Name != "Array" {
+			arrayObj, ok := i.evaluate(expr.Object).(*_arrayInsType)
+			if ok != true {
 				panic(NewRuntimeError(expr.Name, "unexpected index access."))
 			}
 			list := arrayObj.props["list"].([]interface{})
@@ -416,26 +425,28 @@ func (i *Interpreter) VisitSetExpr(expr *Set) interface{} {
 }
 
 func (i *Interpreter) VisitSubscriptExpr(expr *Subscript) interface{} {
-	object, ok := i.evaluate(expr.Object).(*LoxInstance)
-	if ok != true {
-		panic(NewRuntimeError(expr.Bracket, "unexpected subscript expression."))
-	}
-
 	key := i.evaluate(expr.Key)
+	object := i.evaluate(expr.Object)
 
-	if index, ok := key.(int); object.class.Name == "Array" && ok {
-		list, _ := object.props["list"].([]interface{})
-		return list[index]
-	}
-	name, ok := key.(string)
-	if ok != true {
-		panic(NewRuntimeError(nil, "property name not stringified."))
+	if name, ok := key.(string); ok {
+		switch obj := object.(type) {
+		case *LoxInstance:
+			if val, ok := obj.props[name]; ok {
+				return val
+			}
+		case *_arrayInsType:
+			if val, ok := obj.props[name]; ok {
+				return val
+			}
+		}
+	} else if index, ok := key.(int); ok {
+		if arrayObj, ok := object.(*_arrayInsType); ok {
+			list, _ := arrayObj.props["list"].([]interface{})
+			return list[index]
+		}
 	}
 
-	if value, ok := object.props[name]; ok {
-		return value
-	}
-	panic(NewRuntimeError(nil, "no such property."))
+	panic(NewRuntimeError(expr.Bracket, "invalid subscript expression."))
 }
 
 // VisitSuperExpr interpretes something like "super.foo"

@@ -125,6 +125,13 @@ func (r *Resolver) resolveLocal(expr Expr, name *Token) {
 	// if the execution reaches out of the `for` loop above, assume `name` is defined in global.
 }
 
+func (r *Resolver) VisitArrayExpr(expr *Array) interface{} {
+	for _, elem := range expr.Elements {
+		r.resolve(elem)
+	}
+	return nil
+}
+
 func (r *Resolver) VisitAssignExpr(expr *Assign) interface{} {
 	// check the operator at runtime.
 	r.resolve(expr.Value)

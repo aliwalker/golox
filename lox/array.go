@@ -76,11 +76,11 @@ func initArray() {
 			i.props["list"] = list
 			return newArraryInsType(i)
 		}),
-		"append": NewBuiltinFunc(1, func(i *LoxInstance, args ...interface{}) interface{} {
+		"append": NewBuiltinFunc(-1, func(i *LoxInstance, args ...interface{}) interface{} {
 			list, _ := i.props["list"].([]interface{})
-			list = append(list, args[0])
+			list = append(list, args...)
 			i.props["list"] = list
-			return args[0]
+			return len(list)
 		}),
 		"pop": NewBuiltinFunc(0, func(i *LoxInstance, args ...interface{}) interface{} {
 			list, _ := i.props["list"].([]interface{})

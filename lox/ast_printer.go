@@ -140,6 +140,10 @@ func (p *AstPrinter) VisitWhileStmt(stmt *While) interface{} {
 	return p.parenthesize("while", stmt.Condition, stmt.Body)
 }
 
+func (p *AstPrinter) VisitArrayExpr(expr *Array) interface{} {
+	return p.parenthesize("array_literal", expr.Elements)
+}
+
 func (p *AstPrinter) VisitAssignExpr(expr *Assign) interface{} {
 	return p.parenthesize("=", expr.Name.Lexeme, expr.Value)
 }
