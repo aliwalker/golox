@@ -64,6 +64,10 @@ func (p *Parser) peek() *Token {
 	return p.tokens[p.current]
 }
 
+func (p *Parser) peekNext() *Token {
+	return p.tokens[p.current+1]
+}
+
 func (p *Parser) previous() *Token {
 	return p.tokens[p.current-1]
 }
@@ -622,7 +626,7 @@ func (p *Parser) primary() Expr {
 	case p.match(TokenNumber, TokenString):
 		return NewLiteral(p.previous().Literal)
 	case p.match(TokenLeftParen):
-		if p.check(TokenIdentifier) {
+		if p.check(TokenIdentifier) && p.peekNext().Type == TokenComma {
 			params := make([]*Token, 0)
 
 			for !p.check(TokenRightParen) {
